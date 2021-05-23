@@ -12,6 +12,9 @@ export async function getDebugger() {
 
     if(vscode.workspace.workspaceFolders !== undefined) {
         let rootPath = vscode.workspace.workspaceFolders[0].uri.path;
+        if (os.platform() === 'win32') {
+            rootPath = rootPath.substring(1); // For windows the / at the start causes issues
+        }
 
         // Code for downloading and setting up da-podil files
         if (!fs.existsSync(`${rootPath}/daffodil-debugger-${dapodilDebuggerVersion}`)) {
@@ -26,7 +29,7 @@ export async function getDebugger() {
                 throw err;
             }
 
-            // Create zip from rest file
+            // Create zip from rest call
             const filePath = `${rootPath}/daffodil-debugger.zip`;
             const file = fs.createWriteStream(filePath);
 
@@ -46,24 +49,30 @@ export async function getDebugger() {
                 });
             });
             fs.unlinkSync(filePath);
-        }        
+        }
 
         // Run debugger based on OS
         if (os.platform() === 'win32') {
-            vscode.window.showInformationMessage("win32")
+            // Windows stop debugger if already running
+            child_process.exec("tskill java");
         }
         else {
-            // Linux/Mac stop debugger if already running and restart it bring up vscode terminal
+            // Linux/Mac stop debugger if already running and make sure script is executable
             child_process.exec("kill -9 $(ps -ef | grep 'daffodil' | grep 'jar' | awk '{ print $2 }') || return 0") // ensure debugger server not running and
             child_process.exec(`chmod +x ${rootPath}/daffodil-debugger-${dapodilDebuggerVersion}/bin/da-podil`)     // make sure da-podil is executable
-            let terminal = vscode.window.createTerminal({
-                name: "da-podil",
-                cwd: `${rootPath}/daffodil-debugger-${dapodilDebuggerVersion}/bin/`,
-                hideFromUser: false,
-                shellPath: "da-podil",
-            });
-            terminal.show()
         }
+
+        // Assign script name based on os platform
+        let scriptName = os.platform() === 'win32' ? "da-podil.bat": "da-podil";
+
+        // Start debugger in terminal based on scriptName
+        let terminal = vscode.window.createTerminal({
+            name: scriptName,
+            cwd: `${rootPath}/daffodil-debugger-${dapodilDebuggerVersion}/bin/`,
+            hideFromUser: false,
+            shellPath: scriptName,
+        });
+        terminal.show();
 
         // Wait for 5000 ms to make sure debugger is running before the extension tries to connect to it
         await delay(5000);
