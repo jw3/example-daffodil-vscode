@@ -2,30 +2,30 @@
   "name": "daffodil-debug",
   "displayName": "Daffodil Debug",
   "version": "0.0.1",
-  "publisher": "shanedell",
-  "description": "Starter extension for developing debug adapters for VS Code.",
+  "publisher": "Daffodil",
+  "description": "Daffodil Schema Debugger - debug Apache Daffodil schema files.",
   "author": {
-    "name": "Concurrent Technologies Corporation",
-    "email": "dells@ctc.com"
+    "name": "Daffodil Developers",
+    "email": "dev@daffodil.apache.org"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "multi-root ready"
   ],
   "engines": {
     "vscode": "^1.55.0"
   },
-  "icon": "images/mock-debug-icon.png",
+  "icon": "images/daffodil.jpg",
   "categories": [
     "Debuggers"
   ],
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-mock-debug.git"
+    "url": "https://github.com/jw3/example-daffodil-vscode.git"
   },
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-mock-debug/issues"
+    "url": "https://github.com/jw3/example-daffodil-vscode/issues"
   },
   "scripts": {
     "vscode:prepublish": "yarn run package-ext",
