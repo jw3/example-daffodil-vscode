@@ -16,7 +16,7 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
 
     if(vscode.workspace.workspaceFolders !== undefined) {
         let rootPath = vscode.workspace.workspaceFolders[0].uri.path;
-        await vscode.window.showInputBox()
+
         if (os.platform() === 'win32') {
             rootPath = rootPath.substring(1); // For windows the / at the start causes issues
         }
