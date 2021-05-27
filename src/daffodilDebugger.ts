@@ -6,13 +6,17 @@ import * as child_process from 'child_process';
 import { HttpClient } from 'typed-rest-client/HttpClient';
 
 // Function for getting the da-podil debugger
-export async function getDebugger() {
+export async function getDebugger(config: vscode.DebugConfiguration) {
+    let debugOutput = vscode.window.createOutputChannel("Debug");
+    debugOutput.appendLine("Testing")
+    
     let dapodilDebuggerVersion = await vscode.window.showInputBox({'prompt': "Enter in desired dapodil debugger version:"});
     dapodilDebuggerVersion = dapodilDebuggerVersion?.includes("v") ? dapodilDebuggerVersion : `v${dapodilDebuggerVersion}`;
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
     if(vscode.workspace.workspaceFolders !== undefined) {
         let rootPath = vscode.workspace.workspaceFolders[0].uri.path;
+        await vscode.window.showInputBox()
         if (os.platform() === 'win32') {
             rootPath = rootPath.substring(1); // For windows the / at the start causes issues
         }
@@ -52,30 +56,33 @@ export async function getDebugger() {
             fs.unlinkSync(filePath);
         }
 
-        // Stop debugger if running
-        if (os.platform() === 'win32') {
-            // Windows stop debugger if already running
-            child_process.exec("tskill java");
+        // If runDebug var set to true make sure debug server is stopped then ran
+        if (config.runDebug) {
+            // Stop debugger if running
+            if (os.platform() === 'win32') {
+                // Windows stop debugger if already running
+                child_process.exec("tskill java");
+            }
+            else {
+                // Linux/Mac stop debugger if already running and make sure script is executable
+                child_process.exec("kill -9 $(ps -ef | grep 'daffodil' | grep 'jar' | awk '{ print $2 }') || return 0") // ensure debugger server not running and
+                child_process.exec(`chmod +x ${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}/bin/da-podil`)     // make sure da-podil is executable
+            }
+
+            // Assign script name based on os platform
+            let scriptName = os.platform() === 'win32' ? "da-podil.bat": "da-podil";
+
+            // Start debugger in terminal based on scriptName
+            let terminal = vscode.window.createTerminal({
+                name: scriptName,
+                cwd: `${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}/bin/`,
+                hideFromUser: false,
+                shellPath: scriptName,
+            });
+            terminal.show();
+
+            // Wait for 5000 ms to make sure debugger is running before the extension tries to connect to it
+            await delay(5000);
         }
-        else {
-            // Linux/Mac stop debugger if already running and make sure script is executable
-            child_process.exec("kill -9 $(ps -ef | grep 'daffodil' | grep 'jar' | awk '{ print $2 }') || return 0") // ensure debugger server not running and
-            child_process.exec(`chmod +x ${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}/bin/da-podil`)     // make sure da-podil is executable
-        }
-
-        // Assign script name based on os platform
-        let scriptName = os.platform() === 'win32' ? "da-podil.bat": "da-podil";
-
-        // Start debugger in terminal based on scriptName
-        let terminal = vscode.window.createTerminal({
-            name: scriptName,
-            cwd: `${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}/bin/`,
-            hideFromUser: false,
-            shellPath: scriptName,
-        });
-        terminal.show();
-
-        // Wait for 5000 ms to make sure debugger is running before the extension tries to connect to it
-        await delay(5000);
     }
 }
