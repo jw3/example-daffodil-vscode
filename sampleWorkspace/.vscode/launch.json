@@ -13,7 +13,7 @@
 			"stopOnEntry": true,
 			"trace": false,
 			"debugServer": 4711,
-			"runDebug": true
+			"disableDapServer": true
 		}
 	]
 }

@@ -7,57 +7,54 @@ import { HttpClient } from 'typed-rest-client/HttpClient';
 
 // Function for getting the da-podil debugger
 export async function getDebugger(config: vscode.DebugConfiguration) {
-    let debugOutput = vscode.window.createOutputChannel("Debug");
-    debugOutput.appendLine("Testing")
-    
-    let dapodilDebuggerVersion = await vscode.window.showInputBox({'prompt': "Enter in desired dapodil debugger version:"});
-    dapodilDebuggerVersion = dapodilDebuggerVersion?.includes("v") ? dapodilDebuggerVersion : `v${dapodilDebuggerVersion}`;
-    const delay = ms => new Promise(res => setTimeout(res, ms));
+    // If disableDapServer var set to false make sure version of debugger entered is downloaded then ran
+    if (!config.disableDapServer) {
+        let dapodilDebuggerVersion = await vscode.window.showInputBox({'prompt': "Enter in desired dapodil debugger version:"});
+        dapodilDebuggerVersion = dapodilDebuggerVersion?.includes("v") ? dapodilDebuggerVersion : `v${dapodilDebuggerVersion}`;
+        const delay = ms => new Promise(res => setTimeout(res, ms));
 
-    if(vscode.workspace.workspaceFolders !== undefined) {
-        let rootPath = vscode.workspace.workspaceFolders[0].uri.path;
+        if(vscode.workspace.workspaceFolders !== undefined) {
+            let rootPath = vscode.workspace.workspaceFolders[0].uri.path;
 
-        if (os.platform() === 'win32') {
-            rootPath = rootPath.substring(1); // For windows the / at the start causes issues
-        }
-
-        // Code for downloading and setting up da-podil files
-        if (!fs.existsSync(`${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}`)) {
-            // Get da-podil of version entered using http client
-            const client = new HttpClient("clientTest");
-            const dapodilUrl = `https://github.com/jw3/example-daffodil-debug/releases/download/${dapodilDebuggerVersion}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}.zip`;
-            const response = await client.get(dapodilUrl);
-            
-            if (response.message.statusCode !== 200) {
-                const err: Error = new Error(`Unexpected HTTP response: ${response.message.statusCode}`);
-                err["httpStatusCode"] = response.message.statusCode;
-                throw err;
+            if (os.platform() === 'win32') {
+                rootPath = rootPath.substring(1); // For windows the / at the start causes issues
             }
 
-            // Create zip from rest call
-            const filePath = `${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}.zip`;
-            const file = fs.createWriteStream(filePath);
+            // Code for downloading and setting up da-podil files
+            if (!fs.existsSync(`${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}`)) {
+                // Get da-podil of version entered using http client
+                const client = new HttpClient("clientTest");
+                const dapodilUrl = `https://github.com/jw3/example-daffodil-debug/releases/download/${dapodilDebuggerVersion}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}.zip`;
+                const response = await client.get(dapodilUrl);
+                
+                if (response.message.statusCode !== 200) {
+                    const err: Error = new Error(`Unexpected HTTP response: ${response.message.statusCode}`);
+                    err["httpStatusCode"] = response.message.statusCode;
+                    throw err;
+                }
 
-            await new Promise((res, rej) => {
-                file.on("error", (err) => function () { throw err });
-                const stream = response.message.pipe(file);
-                stream.on("close", () => {
-                    try { res(filePath); } catch (err) { rej(err); }
+                // Create zip from rest call
+                const filePath = `${rootPath}/daffodil-debugger-${dapodilDebuggerVersion.substring(1)}.zip`;
+                const file = fs.createWriteStream(filePath);
+
+                await new Promise((res, rej) => {
+                    file.on("error", (err) => function () { throw err });
+                    const stream = response.message.pipe(file);
+                    stream.on("close", () => {
+                        try { res(filePath); } catch (err) { rej(err); }
+                    });
                 });
-            });
 
-            // Unzip file and remove zip file
-            await new Promise ((res, rej) => { 
-                let stream = fs.createReadStream(filePath).pipe(unzip.Extract({ path: `${rootPath}` }));
-                stream.on("close", () => {
-                    try { res(filePath); } catch (err) { rej(err); }
+                // Unzip file and remove zip file
+                await new Promise ((res, rej) => { 
+                    let stream = fs.createReadStream(filePath).pipe(unzip.Extract({ path: `${rootPath}` }));
+                    stream.on("close", () => {
+                        try { res(filePath); } catch (err) { rej(err); }
+                    });
                 });
-            });
-            fs.unlinkSync(filePath);
-        }
+                fs.unlinkSync(filePath);
+            }
 
-        // If runDebug var set to true make sure debug server is stopped then ran
-        if (config.runDebug) {
             // Stop debugger if running
             if (os.platform() === 'win32') {
                 // Windows stop debugger if already running
