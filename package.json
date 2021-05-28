@@ -166,7 +166,7 @@
               },
               "disableDapServer": {
                 "type": "boolean",
-                "description": "Enable running of the Debug Server",
+                "description": "Disable running of the Debug Server",
                 "default": false
               }
             }
