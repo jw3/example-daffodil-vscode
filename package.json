@@ -164,9 +164,9 @@
                 "description": "Enable logging of the Debug Adapter Protocol.",
                 "default": true
               },
-              "disableDapServer": {
+              "useExistingServer": {
                 "type": "boolean",
-                "description": "Disable running of the Debug Server",
+                "description": "Enable connection to running DAP Server",
                 "default": false
               }
             }

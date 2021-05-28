@@ -7,8 +7,8 @@ import { HttpClient } from 'typed-rest-client/HttpClient';
 
 // Function for getting the da-podil debugger
 export async function getDebugger(config: vscode.DebugConfiguration) {
-    // If disableDapServer var set to false make sure version of debugger entered is downloaded then ran
-    if (!config.disableDapServer) {
+    // If useExistingServer var set to false make sure version of debugger entered is downloaded then ran
+    if (!config.useExistingServer) {
         let dapodilDebuggerVersion = await vscode.window.showInputBox({'prompt': "Enter in desired dapodil debugger version:"});
         dapodilDebuggerVersion = dapodilDebuggerVersion?.includes("v") ? dapodilDebuggerVersion : `v${dapodilDebuggerVersion}`;
         const delay = ms => new Promise(res => setTimeout(res, ms));
