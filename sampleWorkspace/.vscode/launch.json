@@ -12,8 +12,7 @@
 			"data": "${workspaceFolder}/works.jpg",
 			"stopOnEntry": true,
 			"trace": false,
-			"debugServer": 4711,
-			"disableDapServer": true
+			"debugServer": 4711
 		}
 	]
 }
