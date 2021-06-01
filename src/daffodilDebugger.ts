@@ -67,7 +67,7 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
             }
 
             // Assign script name based on os platform
-            let scriptName = os.platform() === 'win32' ? "da-podil.bat": "da-podil";
+            let scriptName = os.platform() === 'win32' ? "da-podil.bat": "./da-podil";
 
             // Start debugger in terminal based on scriptName
             let terminal = vscode.window.createTerminal({
