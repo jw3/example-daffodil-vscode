@@ -70,7 +70,7 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 		// Open native file explorer to allow user to select data file from anywhere on their machine
 		return await vscode.window.showOpenDialog({
             canSelectMany: false, openLabel: 'Select',
-            canSelectFiles: true, canSelectFolders: true
+            canSelectFiles: true, canSelectFolders: false
         })
 		.then(fileUri => {
 			if (fileUri && fileUri[0]) {
