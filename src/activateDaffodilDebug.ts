@@ -5,11 +5,12 @@
 'use strict';
 
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as htmlView from './hexview/htmlView';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { DaffodilDebugSession } from './daffodilDebug';
 import { getDebugger } from './daffodilDebugger';
 import { FileAccessor } from './daffodilRuntime';
-import * as path from 'path';
 
 // Function for setting up the commands for Run and Debug file
 function createDebugRunFileConfigs(resource: vscode.Uri, runOrDebug: String) {
@@ -153,7 +154,7 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 	}, vscode.DebugConfigurationProviderTriggerKind.Dynamic));
 
 	if (!factory) {
-		factory = new InlineDebugAdapterFactory();
+		factory = new InlineDebugAdapterFactory(context);
 	}
 	context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dfdl', factory));
 	if ('dispose' in factory) {
@@ -261,6 +262,13 @@ export const workspaceFileAccessor: FileAccessor = {
 };
 
 class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
+	context: vscode.ExtensionContext;
+	htmlViewer: htmlView.DebuggerHtmlView;
+
+	constructor(context: vscode.ExtensionContext) {
+		this.context = context;
+		this.htmlViewer = new htmlView.DebuggerHtmlView(context);
+	}
 
 	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
 		return new vscode.DebugAdapterInlineImplementation(new DaffodilDebugSession(workspaceFileAccessor));
