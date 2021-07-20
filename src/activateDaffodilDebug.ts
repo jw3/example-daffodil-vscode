@@ -9,8 +9,9 @@ import * as path from 'path';
 import * as htmlView from './hexview/htmlView';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { DaffodilDebugSession } from './daffodilDebug';
-import { getDebugger } from './daffodilDebugger';
+import { getDebugger, getDataFileFromFolder } from './daffodilDebugger';
 import { FileAccessor } from './daffodilRuntime';
+import * as fs from 'fs';
 
 // Function for setting up the commands for Run and Debug file
 function createDebugRunFileConfigs(resource: vscode.Uri, runOrDebug: String) {
@@ -92,19 +93,37 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 						name: "Dynamic Launch",
 						request: "launch",
 						type: "dfdl",
-						program: "${file}"
+						program: "${file}",
+						data: "${command:AskForProgramName}",
+						debugServer: 4711,
+						infosetOutput: {
+							"type": "file",
+							"path": "${workspaceFolder}/${file}-infoset.xml"
+						}
 					},
 					{
 						name: "Another Dynamic Launch",
 						request: "launch",
 						type: "dfdl",
-						program: "${file}"
+						program: "${file}",
+						data: "${command:AskForProgramName}",
+						debugServer: 4711,
+						infosetOutput: {
+							"type": "file",
+							"path": "${workspaceFolder}/${file}-infoset.xml"
+						}
 					},
 					{
 						name: "Daffodil Launch",
 						request: "launch",
 						type: "dfdl",
-						program: "${file}"
+						program: "${file}",
+						data: "${command:AskForProgramName}",
+						debugServer: 4711,
+						infosetOutput: {
+							"type": "file",
+							"path": "${workspaceFolder}/${file}-infoset.xml"
+						}
 					}
 				];
 			}
@@ -218,9 +237,10 @@ class DaffodilConfigurationProvider implements vscode.DebugConfigurationProvider
 				config.name = 'Launch';
 				config.request = 'launch';
 				config.program = '${file}';
+				config.data = '${command:AskForProgramName}';
 				config.stopOnEntry = true;
 				config.useExistingServer = false;
-				config.dapodilVersion = "";
+				config.dapodilVersion = "v0.0.8";
 				config.infosetOutput = {
 					"type": "file",
 					"path": "${workspaceFolder}/${file}-infoset.xml"
@@ -235,6 +255,21 @@ class DaffodilConfigurationProvider implements vscode.DebugConfigurationProvider
 			});
 		}
 
+		let dataFolder = config.data;
+
+		if (dataFolder.includes("${workspaceFolder}") && vscode.workspace.workspaceFolders && dataFolder.split(".").length == 1) {
+			dataFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+		}
+
+		if (!dataFolder.includes("${workspaceFolder}") && dataFolder.split(".").length == 1 && fs.lstatSync(dataFolder).isDirectory()) {
+			return getDataFileFromFolder(dataFolder).then(dataFile => {
+				config.data = dataFile;
+				return getDebugger(config).then(result => {
+					return config;
+				})
+			})
+		}
+		
 		return getDebugger(config).then(result => {
 			return config;
 		})
