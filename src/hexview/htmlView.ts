@@ -43,12 +43,9 @@ export class DebuggerHtmlView {
             panel.title = "Data Info";
         }
 
-        panel.webview.html  =   "<h3 style=\"color=blue;\">" +
-                                    hexArray[body.bytePos1b-1] +
-                                "</h3>" + 
-                                "<h3 style=\"color=blue;\">" +
-                                    hexArray[body.bytePos1b] +
-                                "</h3>";
+        if (!panel.webview.html.includes(hexArray[body.bytePos1b-1])) {
+            panel.webview.html += "<h3 style=\"font-size: 14px;\">" + hexArray[body.bytePos1b-1] + "</h3>"
+        }
         panel.reveal();
     }
 }
