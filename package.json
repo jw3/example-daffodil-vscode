@@ -38,6 +38,7 @@
   "dependencies": {
     "await-notify": "1.0.1",
     "child_process": "^1.0.2",
+    "hexy": "^0.3.1",
     "unzip-stream": "^0.3.1",
     "vscode-debugadapter": "^1.46.0",
     "xdg-app-paths": "^7.3.0"

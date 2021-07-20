@@ -1,51 +1,54 @@
-import {
-    window, debug, DebugSession, DebugSessionCustomEvent, ExtensionContext, WebviewPanel, ViewColumn
-} from "vscode";
-import { Dict } from './commonTypes';
-import { DisplayHtmlRequest } from "./adapterMessages";
+import * as vscode from "vscode";
+import { Dict, DisplayHtmlRequest } from "./types";
+import * as fs from "fs";
+import * as hexy from "hexy";
 
 export class DebuggerHtmlView {
-    panels: Dict<WebviewPanel> = {};
+    panels: Dict<vscode.WebviewPanel> = {};
 
-    constructor(context: ExtensionContext) {
+    constructor(context: vscode.ExtensionContext) {
         let subscriptions = context.subscriptions;
-        subscriptions.push(debug.onDidTerminateDebugSession(this.onTerminatedDebugSession, this));
-        subscriptions.push(debug.onDidReceiveDebugSessionCustomEvent(this.onDebugSessionCustomEvent, this));
+        subscriptions.push(vscode.debug.onDidTerminateDebugSession(this.onTerminatedDebugSession, this));
+        subscriptions.push(vscode.debug.onDidReceiveDebugSessionCustomEvent(this.onDebugSessionCustomEvent, this));
     }
 
-    onTerminatedDebugSession(session: DebugSession) {
+    onTerminatedDebugSession(session: vscode.DebugSession) {
         if (session.type == 'dfdl') {
             delete this.panels[session.id];
         }
     }
 
-    onDebugSessionCustomEvent(e: DebugSessionCustomEvent) {
-        window.showInformationMessage("onDebugSessionCustomEvent");
+    onDebugSessionCustomEvent(e: vscode.DebugSessionCustomEvent) {
         if (e.session.type == 'dfdl') {
-            if (e.event == 'displayHtml') {
+            if (e.event == 'daffodil.data') {
                 this.onDisplayHtml(e.session, e.body);
             }
         }
     }
 
-    onDisplayHtml(session: DebugSession, body: DisplayHtmlRequest) {
-        if (!body.html)
-            return;
-        let title = body.title || session.name;
+    onDisplayHtml(session: vscode.DebugSession, body: DisplayHtmlRequest) {
+        let file = fs.readFileSync("/Users/sdell/workspaces/daffodil/example-daffodil-vscode/sampleWorkspace/works.jpg");
+        let hex = hexy.hexy(file);
+        let hexArray = hex.split("\n");
+
         let panel = this.panels[session.name];
         if (!panel) {
-            let position = body.position !== null ? body.position : ViewColumn.Active;
-            panel = window.createWebviewPanel('dfdl', title, position, {
+            panel = vscode.window.createWebviewPanel('dfdl', "Data Info", vscode.ViewColumn.Active, {
                 enableScripts: true
             });
             panel.onDidDispose(() => delete this.panels[session.name]);
             this.panels[session.name] = panel;
-        } else {
-            panel.title = title;
         }
-        panel.webview.html = body.html;
-        if (body.reveal) {
-            panel.reveal();
+        else {
+            panel.title = "Data Info";
         }
+
+        panel.webview.html  =   "<h3 style=\"color=blue;\">" +
+                                    hexArray[body.bytePos1b-1] +
+                                "</h3>" + 
+                                "<h3 style=\"color=blue;\">" +
+                                    hexArray[body.bytePos1b] +
+                                "</h3>";
+        panel.reveal();
     }
 }
