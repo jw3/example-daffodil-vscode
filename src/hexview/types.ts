@@ -1,10 +1,5 @@
 import { ViewColumn } from "vscode";
 
-
-export interface Dict<T> {
-    [key: string]: T;
-}
-
 export interface DisplayHtmlRequest {
     title: string;
     position: ViewColumn;

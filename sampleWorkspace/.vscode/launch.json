@@ -12,7 +12,7 @@
 			"data": "${workspaceFolder}/works.jpg",
 			"infosetOutput": {
 				"type": "file",
-				"path": "${workspaceFolder}/infoset.xml"
+				"path": "${workspaceFolder}/jpeg-infoset.xml"
 			},
 			"stopOnEntry": true,
 			"trace": false,

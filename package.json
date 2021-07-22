@@ -190,8 +190,8 @@
             "name": "Ask for file name",
             "program": "${workspaceFolder}/${command:AskForProgramName}",
             "stopOnEntry": true,
-            "data": "${command:AskForProgramName}",
-				    "dapodilVersion": "v0.0.8",
+            "data": "${workspaceFolder}/${command:AskForProgramName}",
+				    "dapodilVersion": "v0.0.9-1",
 				    "infosetOutput": {
 					    "type": "file",
 					    "path": "${workspaceFolder}/infoset.xml"
@@ -209,8 +209,8 @@
               "name": "Ask for file name",
               "program": "^\"\\${workspaceFolder}/\\${command:AskForProgramName}\"",
               "stopOnEntry": true,
-              "data": "${command:AskForProgramName}",
-              "dapodilVersion": "v0.0.8",
+              "data": "^\"\\${workspaceFolder}/\\${command:AskForProgramName}\"",
+              "dapodilVersion": "v0.0.9-1",
               "infosetOutput": {
                 "type": "file",
                 "path": "${workspaceFolder}/infoset.xml"
