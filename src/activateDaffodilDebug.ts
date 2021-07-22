@@ -273,7 +273,9 @@ class DaffodilConfigurationProvider implements vscode.DebugConfigurationProvider
 			dataFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
 		}
 
-		if (!dataFolder.includes("${command:AskForProgramName}") && !dataFolder.includes("${workspaceFolder}") && dataFolder.split(".").length === 1 && fs.lstatSync(dataFolder).isDirectory()) {
+		if (!dataFolder.includes("${command:AskForProgramName}") && !dataFolder.includes("${workspaceFolder}") 
+			&& dataFolder.split(".").length === 1 && fs.lstatSync(dataFolder).isDirectory()) 
+		{
 			return getDataFileFromFolder(dataFolder).then(dataFile => {
 				config.data = dataFile;
 				return getDebugger(config).then(result => {
