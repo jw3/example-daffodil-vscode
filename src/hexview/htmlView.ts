@@ -29,7 +29,7 @@ export class DebuggerHtmlView {
     getDecorator() {
         this.decorator.dispose(); // needed to reset decorator
         this.decorator = vscode.window.createTextEditorDecorationType({
-            color: "#ffffffff",
+            color: "white",
             gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
             gutterIconSize: 'contain'
         });
