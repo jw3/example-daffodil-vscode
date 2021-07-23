@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { DisplayHtmlRequest } from "./types";
+import { DaffodilData } from "./types";
 import * as fs from "fs";
 import * as hexy from "hexy";
 import XDGAppPaths from 'xdg-app-paths';
 const xdgAppPaths = XDGAppPaths({"name": "dapodil"});
 
-export class DebuggerHtmlView {
+export class DebuggerHexView {
     context: vscode.ExtensionContext;
     dataFile: string = "";
     hexFile: string = `${xdgAppPaths.data()}/.data-hex`;
@@ -120,7 +120,7 @@ export class DebuggerHtmlView {
     }
 
     // Method to open the hex file via text editor, selecting the line at the current data position
-    openHexFile(body: DisplayHtmlRequest, hex: string) {
+    openHexFile(body: DaffodilData, hex: string) {
         let range = new vscode.Range(
             new vscode.Position(body.bytePos1b-1, 0),
             new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0)
@@ -144,7 +144,7 @@ export class DebuggerHtmlView {
     }
 
     // Method for updating the line selected in the hex file using the current data position
-    updateSelectedDataPosition(body: DisplayHtmlRequest, hex: string) {
+    updateSelectedDataPosition(body: DaffodilData, hex: string) {
         let hexEditor = vscode.window.activeTextEditor;
         let start = new vscode.Position(body.bytePos1b-1, 0);
         let end = new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0);
@@ -204,7 +204,7 @@ export class DebuggerHtmlView {
     }
 
     // Method to display the hex of the current data position sent from the debugger
-    async onDisplayHex(session: vscode.DebugSession, body: DisplayHtmlRequest) {
+    async onDisplayHex(session: vscode.DebugSession, body: DaffodilData) {
         if (!vscode.workspace.workspaceFolders) {
             return;
         }

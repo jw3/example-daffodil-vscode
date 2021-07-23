@@ -6,7 +6,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as htmlView from './hexview/htmlView';
+import * as hexView from './hexview/hexView';
 import { WorkspaceFolder, DebugConfiguration, ProviderResult, CancellationToken } from 'vscode';
 import { DaffodilDebugSession } from './daffodilDebug';
 import { getDebugger, getDataFileFromFolder } from './daffodilDebugger';
@@ -312,11 +312,11 @@ export const workspaceFileAccessor: FileAccessor = {
 
 class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
 	context: vscode.ExtensionContext;
-	htmlViewer: htmlView.DebuggerHtmlView;
+	hexViewer: hexView.DebuggerHexView;
 
 	constructor(context: vscode.ExtensionContext) {
 		this.context = context;
-		this.htmlViewer = new htmlView.DebuggerHtmlView(context);
+		this.hexViewer = new hexView.DebuggerHexView(context);
 	}
 
 	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
