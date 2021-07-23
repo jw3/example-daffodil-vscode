@@ -84,7 +84,7 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 		});
 
 		// Create file that holds path to data file used
-		fs.writeFile(`${xdgAppPaths.data()}/.dataFile`, dataFile, function(err){
+		await fs.writeFile(`${xdgAppPaths.data()}/.dataFile`, dataFile, function(err){
 			if (err) {
 				vscode.window.showInformationMessage(`error code: ${err.code} - ${err.message}`);
 			}

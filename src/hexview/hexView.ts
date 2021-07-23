@@ -8,13 +8,11 @@ const xdgAppPaths = XDGAppPaths({"name": "dapodil"});
 export class DebuggerHexView {
     context: vscode.ExtensionContext;
     dataFile: string = "";
-    hexFile: string = `${xdgAppPaths.data()}/.data-hex`;
+    hexFile: string = vscode.workspace.workspaceFolders ? `${vscode.workspace.workspaceFolders[0].uri.fsPath}/datafile-hex` : `${xdgAppPaths.data()}/datafile-hex`;
     arrowIconFileCreated: boolean = false;
-    hexFileOpened: boolean = false;
     workspaceConfUpdated: boolean = false;
     originalSelectionColor: string = "";
     decorator: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({
-        color: "white",
         gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
         gutterIconSize: 'contain'
     });
@@ -22,17 +20,16 @@ export class DebuggerHexView {
     constructor(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(this.onTerminatedDebugSession, this));
         context.subscriptions.push(vscode.debug.onDidReceiveDebugSessionCustomEvent(this.onDebugSessionCustomEvent, this));
+        context.subscriptions.push(vscode.debug.onDidStartDebugSession(this.onDidStartDebugSession, this));
         this.context = context;
     }
 
     // Method for getting the decorator
     getDecorator(hexLength, dataPositon) {
         this.decorator.dispose(); // needed to reset decorator
-        // vscode.window.showInformationMessage(`hexLength: ${hexLength}`);
-        // vscode.window.showInformationMessage(`dataPostion: ${dataPositon}`);
+
         if (hexLength !== dataPositon) {
             this.decorator = vscode.window.createTextEditorDecorationType({
-                color: "white",
                 gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
                 gutterIconSize: 'contain'
             });
@@ -44,11 +41,7 @@ export class DebuggerHexView {
     deleteFile(fileName) {
         if (fs.existsSync(fileName)) {
             if (fileName === this.hexFile) {
-                vscode.window.visibleTextEditors.forEach(editior => {
-                    if (editior.document.fileName === this.hexFile) {
-                        editior.hide(); // method is deprecated but is only way to close specific editor not just the active one
-                    }
-                });
+                this.closeHexFile();
             }
 
             fs.unlink(fileName, function (err) {
@@ -62,11 +55,14 @@ export class DebuggerHexView {
     // Overriden onTerminatedDebugSession method
     onTerminatedDebugSession(session: vscode.DebugSession) {
         if (session.type === 'dfdl') {
-            this.deleteFile(this.hexFile);
             this.deleteFile(`${xdgAppPaths.data()}/.dataFile`);
             this.deleteFile(`${xdgAppPaths.data()}/.arrow.svg`);
+            vscode.window.visibleTextEditors.forEach(editior => {
+                if (editior.document.fileName === this.hexFile) {
+                    editior.hide(); // method is deprecated but is only way to close specific editor not just the active one
+                }
+            });
             this.dataFile = "";
-            this.hexFileOpened = false;
             this.updateWorkbenchConfig(true); // reset workbench config
             this.workspaceConfUpdated = false;
             this.originalSelectionColor = "";
@@ -83,31 +79,25 @@ export class DebuggerHexView {
         }
     }
 
+    // Override onDidStartDebugSession method
+    onDidStartDebugSession(session: vscode.DebugSession) {
+        // On debug session make sure hex file is deleted and not opened
+        if (session.type === 'dfdl') {
+            this.closeHexFile();
+            this.deleteFile(this.hexFile);
+            this.decorator.dispose();
+        }
+    }
+
     // Method for retrieving the data file used
     async setDataFile() {
         let config = vscode.workspace.getConfiguration("launch", vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri : vscode.Uri.parse(""));
         let values = config.get('configurations', "");
+        let dataFile = `${xdgAppPaths.data()}/.dataFile`;
 
-        // If no config exists get the data file path from the .dataFile or prompt user to go to select it via file explorer
-        // Else just grab the dataFile path from the config data attribute
-        if (values.length === 0) {
-            let dataFile = `${xdgAppPaths.data()}/.dataFile`;
-
-            if (fs.existsSync(dataFile)) {
-                this.dataFile = fs.readFileSync(dataFile).toString();
-            }
-            else { // should never be hit but is here as a fail safe
-                this.dataFile = await vscode.window.showOpenDialog({
-                    canSelectMany: false, openLabel: 'Select',
-                    canSelectFiles: true, canSelectFolders: false
-                })
-                .then(fileUri => {
-                    if (fileUri && fileUri[0]) {
-                        return fileUri[0].fsPath;
-                    }
-                    return "";
-                });
-            }
+        // If no config exists or data file exists get the data file path from the .dataFile
+        if (values.length === 0 || fs.existsSync(dataFile)) {
+            this.dataFile = fs.readFileSync(dataFile).toString();
         }
         else {
             if (values[0]["data"].includes("${workspaceFolder}") && vscode.workspace.workspaceFolders) {
@@ -117,30 +107,6 @@ export class DebuggerHexView {
                 this.dataFile = values[0]["data"];
             }
         }
-    }
-
-    // Method to open the hex file via text editor, selecting the line at the current data position
-    openHexFile(body: DaffodilData, hex: string) {
-        let range = new vscode.Range(
-            new vscode.Position(body.bytePos1b-1, 0),
-            new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0)
-        );
-        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : body.bytePos1b;
-        vscode.workspace.openTextDocument(this.hexFile).then(doc => {
-            vscode.window.showTextDocument(doc, {
-                selection: range,
-                viewColumn: vscode.ViewColumn.Beside,
-                preserveFocus: true, preview: false
-            })
-            .then(editor => {
-                editor.setDecorations(
-                    this.getDecorator(hexLength, body.bytePos1b),
-                    [range]
-                );
-            });
-        });
-
-        this.hexFileOpened = true;
     }
 
     // Method for updating the line selected in the hex file using the current data position
@@ -203,6 +169,48 @@ export class DebuggerHexView {
         </g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g><g></g></svg>`);
     }
 
+    // Method to close hexFile if opened in editor
+    closeHexFile() {
+        vscode.window.visibleTextEditors.forEach(editior => {
+            if (editior.document.fileName === this.hexFile) {
+                editior.hide();
+            }
+        });
+    }
+
+    // Method to open the hex file via text editor, selecting the line at the current data position
+    openHexFile(body: DaffodilData, hex: string) {
+        let range = new vscode.Range(
+            new vscode.Position(body.bytePos1b-1, 0),
+            new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0)
+        );
+        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : body.bytePos1b;
+        vscode.workspace.openTextDocument(this.hexFile).then(doc => {
+            vscode.window.showTextDocument(doc, {
+                selection: range,
+                viewColumn: vscode.ViewColumn.Three,
+                preserveFocus: true, preview: false
+            })
+            .then(editor => {
+                editor.setDecorations(
+                    this.getDecorator(hexLength, body.bytePos1b),
+                    [range]
+                );
+            });
+        });
+    }
+
+    // Method to see hexFile is opened
+    checkIfHexFileOpened() {
+        let result = false;
+        vscode.window.visibleTextEditors.forEach(editior => {
+            if (editior.document.fileName === this.hexFile) {
+                result = true;
+            }
+        });
+        return result;
+    }
+
     // Method to display the hex of the current data position sent from the debugger
     async onDisplayHex(session: vscode.DebugSession, body: DaffodilData) {
         if (!vscode.workspace.workspaceFolders) {
@@ -236,11 +244,17 @@ export class DebuggerHexView {
         }
 
         // Open up hex document
-        if (!this.hexFileOpened) {
+        if (!this.checkIfHexFileOpened()) {
             this.openHexFile(body, hex);
         }
         else {
             this.updateSelectedDataPosition(body, hex);
+        }
+
+        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0;
+
+        if (hexLength === 0) {
+            this.closeHexFile();
         }
     }
 }
