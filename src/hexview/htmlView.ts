@@ -26,13 +26,17 @@ export class DebuggerHtmlView {
     }
 
     // Method for getting the decorator
-    getDecorator() {
+    getDecorator(hexLength, dataPositon) {
         this.decorator.dispose(); // needed to reset decorator
-        this.decorator = vscode.window.createTextEditorDecorationType({
-            color: "white",
-            gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
-            gutterIconSize: 'contain'
-        });
+        // vscode.window.showInformationMessage(`hexLength: ${hexLength}`);
+        // vscode.window.showInformationMessage(`dataPostion: ${dataPositon}`);
+        if (hexLength !== dataPositon) {
+            this.decorator = vscode.window.createTextEditorDecorationType({
+                color: "white",
+                gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
+                gutterIconSize: 'contain'
+            });
+        }
         return this.decorator;
     }
 
@@ -117,7 +121,11 @@ export class DebuggerHtmlView {
 
     // Method to open the hex file via text editor, selecting the line at the current data position
     openHexFile(body: DisplayHtmlRequest, hex: string) {
-        let range = new vscode.Range(new vscode.Position(body.bytePos1b-1, 0), new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1].length));
+        let range = new vscode.Range(
+            new vscode.Position(body.bytePos1b-1, 0),
+            new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0)
+        );
+        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : body.bytePos1b;
         vscode.workspace.openTextDocument(this.hexFile).then(doc => {
             vscode.window.showTextDocument(doc, {
                 selection: range,
@@ -126,7 +134,7 @@ export class DebuggerHtmlView {
             })
             .then(editor => {
                 editor.setDecorations(
-                    this.getDecorator(),
+                    this.getDecorator(hexLength, body.bytePos1b),
                     [range]
                 );
             });
@@ -138,7 +146,10 @@ export class DebuggerHtmlView {
     // Method for updating the line selected in the hex file using the current data position
     updateSelectedDataPosition(body: DisplayHtmlRequest, hex: string) {
         let hexEditor = vscode.window.activeTextEditor;
-        let range = new vscode.Range(new vscode.Position(body.bytePos1b-1, 0), new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1].length));
+        let start = new vscode.Position(body.bytePos1b-1, 0);
+        let end = new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0);
+        let range = new vscode.Range(start, end);
+        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : body.bytePos1b;
 
         vscode.window.visibleTextEditors.forEach(editior => {
             if (editior.document.fileName === this.hexFile) {
@@ -150,12 +161,8 @@ export class DebuggerHtmlView {
         if (!hexEditor) {
             return;
         }
-        hexEditor.selection = new vscode.Selection(
-            new vscode.Position(body.bytePos1b-1, 0),
-            new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1].length)
-        );
-        
-        hexEditor.setDecorations(this.getDecorator(), [range]);
+        hexEditor.selection = new vscode.Selection(range.start, range.end);
+        hexEditor.setDecorations(this.getDecorator(hexLength, body.bytePos1b), [range]);
         hexEditor.revealRange(range);
     }
 
