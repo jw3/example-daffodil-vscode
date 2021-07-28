@@ -112,10 +112,11 @@ export class DebuggerHexView {
     // Method for updating the line selected in the hex file using the current data position
     updateSelectedDataPosition(body: DaffodilData, hex: string) {
         let hexEditor = vscode.window.activeTextEditor;
-        let start = new vscode.Position(body.bytePos1b-1, 0);
-        let end = new vscode.Position(body.bytePos1b-1, hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : 0);
+        let lineNum = (body.bytePos1b-1) / 16;
+        let start = new vscode.Position(lineNum, 0);
+        let end = new vscode.Position(lineNum, hex.split("\n")[lineNum] ? hex.split("\n")[lineNum].length : 0);
         let range = new vscode.Range(start, end);
-        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : body.bytePos1b;
+        let hexLength = hex.split("\n")[lineNum] ? hex.split("\n")[lineNum].length : body.bytePos1b;
 
         vscode.window.visibleTextEditors.forEach(editior => {
             if (editior.document.fileName === this.hexFile) {
