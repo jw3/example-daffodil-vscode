@@ -9,7 +9,9 @@ export class DebuggerHexView {
     context: vscode.ExtensionContext;
     dataFile: string = "";
     hexFile: string = vscode.workspace.workspaceFolders ? `${vscode.workspace.workspaceFolders[0].uri.fsPath}/datafile-hex` : `${xdgAppPaths.data()}/datafile-hex`;
+    hexString: string = "";
     initialState: boolean = true;
+    bytePos1b: number = -1;
     decorator: vscode.TextEditorDecorationType = vscode.window.createTextEditorDecorationType({
         gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
         gutterIconSize: 'contain',
@@ -21,6 +23,9 @@ export class DebuggerHexView {
         context.subscriptions.push(vscode.debug.onDidTerminateDebugSession(this.onTerminatedDebugSession, this));
         context.subscriptions.push(vscode.debug.onDidReceiveDebugSessionCustomEvent(this.onDebugSessionCustomEvent, this));
         context.subscriptions.push(vscode.debug.onDidStartDebugSession(this.onDidStartDebugSession, this));
+        context.subscriptions.push(vscode.commands.registerCommand('hexview.display', async () => {
+            await this.openHexFile();
+        }));
         this.context = context;
     }
 
@@ -66,6 +71,7 @@ export class DebuggerHexView {
             });
             this.dataFile = "";
             this.initialState = true;
+            this.bytePos1b = -1;
         }
     }
 
@@ -109,10 +115,10 @@ export class DebuggerHexView {
     }
 
     // Method for getting the selection range
-    getSelectionRange(body: DaffodilData, hex: string): [vscode.Range, number] {
-        let lineNum = Math.floor((body.bytePos1b-1) / 16);
-        let paddingForSpaces = body.bytePos1b-1 > 0 ? ((body.bytePos1b - (lineNum * 16)-1)*2) : 0;
-        let paddingForLine = body.bytePos1b - 16 > 0 ? (body.bytePos1b - (lineNum * 16)) : body.bytePos1b;
+    getSelectionRange(): [vscode.Range, number] {
+        let lineNum = Math.floor((this.bytePos1b-1) / 16);
+        let paddingForSpaces = this.bytePos1b-1 > 0 ? ((this.bytePos1b - (lineNum * 16)-1)*2) : 0;
+        let paddingForLine = this.bytePos1b - 16 > 0 ? (this.bytePos1b - (lineNum * 16)) : this.bytePos1b;
         let dataPositon = 9 + paddingForLine + paddingForSpaces;
         let start = new vscode.Position(lineNum, dataPositon);
         let end = new vscode.Position(lineNum, dataPositon+2);
@@ -120,10 +126,10 @@ export class DebuggerHexView {
     }
 
     // Method for updating the line selected in the hex file using the current data position
-    updateSelectedDataPosition(body: DaffodilData, hex: string) {
+    updateSelectedDataPosition() {
         let hexEditor = vscode.window.activeTextEditor;
-        let [range, lineNum] = this.getSelectionRange(body, hex);
-        let hexLength = hex.split("\n")[lineNum] ? hex.split("\n")[lineNum].length : body.bytePos1b;
+        let [range, lineNum] = this.getSelectionRange();
+        let hexLength = this.hexString.split("\n")[lineNum] ? this.hexString.split("\n")[lineNum].length : this.bytePos1b;
 
         vscode.window.visibleTextEditors.forEach(editior => {
             if (editior.document.fileName === this.hexFile) {
@@ -136,7 +142,7 @@ export class DebuggerHexView {
             return;
         }
         hexEditor.selection = new vscode.Selection(range.start, range.end);
-        hexEditor.setDecorations(this.getDecorator(hexLength, body.bytePos1b), [range]);
+        hexEditor.setDecorations(this.getDecorator(hexLength, this.bytePos1b), [range]);
         hexEditor.revealRange(range);
     }
 
@@ -164,9 +170,9 @@ export class DebuggerHexView {
     }
 
     // Method to open the hex file via text editor, selecting the line at the current data position
-    openHexFile(body: DaffodilData, hex: string) {
-        let [range, _] = this.getSelectionRange(body, hex);
-        let hexLength = hex.split("\n")[body.bytePos1b-1] ? hex.split("\n")[body.bytePos1b-1].length : body.bytePos1b;
+    openHexFile() {
+        let [range, _] = this.getSelectionRange();
+        let hexLength = this.hexString.split("\n")[this.bytePos1b-1] ? this.hexString.split("\n")[this.bytePos1b-1].length : this.bytePos1b;
         vscode.workspace.openTextDocument(this.hexFile).then(doc => {
             vscode.window.showTextDocument(doc, {
                 selection: range,
@@ -175,7 +181,7 @@ export class DebuggerHexView {
             })
             .then(editor => {
                 editor.setDecorations(
-                    this.getDecorator(hexLength, body.bytePos1b),
+                    this.getDecorator(hexLength, this.bytePos1b),
                     [range]
                 );
             });
@@ -198,6 +204,8 @@ export class DebuggerHexView {
         if (!vscode.workspace.workspaceFolders) {
             return;
         }
+        
+        this.bytePos1b = body.bytePos1b;
 
         if (this.dataFile === "") {
             await this.setDataFile();
@@ -206,7 +214,6 @@ export class DebuggerHexView {
         let file = fs.readFileSync(this.dataFile);
         let hex = hexy.hexy(file);
         let hexLines = hex.split("\n");
-        let formattedHex = "";
 
         // Format hex code to make the file look nicer
         hexLines.forEach(h => {
@@ -214,18 +221,18 @@ export class DebuggerHexView {
                 let splitHex = h.split(":");
                 let dataLocations = splitHex[1].split(" ");
 
-                formattedHex += splitHex[0] + ": ";
+                this.hexString += splitHex[0] + ": ";
                 for(var i = 1; i < dataLocations.length-2; i++) {
                     let middle = Math.floor(dataLocations[i].length/2);
-                    formattedHex += dataLocations[i].substr(0, middle).toUpperCase() + " " + dataLocations[i].substr(middle).toUpperCase() + " ";
+                    this.hexString += dataLocations[i].substr(0, middle).toUpperCase() + " " + dataLocations[i].substr(middle).toUpperCase() + " ";
                 }
-                formattedHex += "\t" + dataLocations[dataLocations.length-1] + "\n";
+                this.hexString += "\t" + dataLocations[dataLocations.length-1] + "\n";
             }
         });
 
         // Create file that holds path to data file used
         if (!fs.existsSync(this.hexFile)) {
-            await fs.writeFile(this.hexFile, formattedHex, function(err){
+            await fs.writeFile(this.hexFile, this.hexString, function(err){
                 if (err) {
                     vscode.window.showInformationMessage(`error code: ${err.code} - ${err.message}`);
                 }
@@ -235,16 +242,15 @@ export class DebuggerHexView {
         // Create arrow file and open up hex document only on start of debug
         if (this.initialState) {
             await this.createArrowIconFile();
-            this.openHexFile(body, formattedHex);
             this.initialState = false;
         }
 
         // Only update position if hex file is opened
         if (this.checkIfHexFileOpened()) {
-            this.updateSelectedDataPosition(body, formattedHex);
+            this.updateSelectedDataPosition();
         }
 
-        let hexLength = formattedHex.split("\n")[body.bytePos1b-1] ? formattedHex.split("\n")[body.bytePos1b-1].length : 0;
+        let hexLength = this.hexString.split("\n")[this.bytePos1b-1] ? this.hexString.split("\n")[this.bytePos1b-1].length : 0;
         if (hexLength === 0) {
             this.closeHexFile();
         }
