@@ -71,7 +71,7 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.dfdl-debug.getProgramName', async (config) => {
 		// Open native file explorer to allow user to select data file from anywhere on their machine
-		return await vscode.window.showOpenDialog({
+		let programFile = await vscode.window.showOpenDialog({
             canSelectMany: false, openLabel: "Select DFDL schema to debug",
             canSelectFiles: true, canSelectFolders: false,
 			title: "Select DFDL schema to debug"
@@ -83,6 +83,12 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 
 			return "";
 		});
+
+		if (programFile === "") {
+			vscode.debug.stopDebugging();
+		}
+
+		return programFile;
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.dfdl-debug.getDataName', async (config) => {
@@ -106,6 +112,11 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 				vscode.window.showInformationMessage(`error code: ${err.code} - ${err.message}`);
 			}
 		});
+
+		if (dataFile === "") {
+			vscode.debug.stopDebugging();
+		}
+
 		return dataFile;
 	}));
 
