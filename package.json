@@ -124,6 +124,18 @@
       {
         "command": "hexview.display",
         "title": "Display the hex view"
+      },
+      {
+        "command": "infoset.display",
+        "title": "Display the current infoset"
+      },
+      {
+        "command": "infoset.save",
+        "title": "Save the current infoset"
+      },
+      {
+        "command": "infoset.diff",
+        "title": "Diff recent change to current infoset"
       }
     ],
     "breakpoints": [
