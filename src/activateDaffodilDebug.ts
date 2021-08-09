@@ -244,14 +244,8 @@ export function activateDaffodilDebug(context: vscode.ExtensionContext, factory?
 						const varName = m[0];
 						const varRange = new vscode.Range(l, m.index, l, m.index + varName.length);
 
-						// some literal text
-						//allValues.push(new vscode.InlineValueText(varRange, `${varName}: ${viewport.start.line}`));
-
 						// value found via variable lookup
 						allValues.push(new vscode.InlineValueVariableLookup(varRange, varName, false));
-
-						// value determined via expression evaluation
-						//allValues.push(new vscode.InlineValueEvaluatableExpression(varRange, varName));
 					}
 				} while (m);
 			}
