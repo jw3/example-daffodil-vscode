@@ -22,7 +22,7 @@ export async function activate(ctx: vscode.ExtensionContext) {
         if(sid !== undefined) {
             let path = ensure(tmp(sid));
             doc = await vscode.workspace.openTextDocument(path);
-            await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true, preview: true });    
+            await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true, preview: true });
         }
     }));
 
@@ -31,7 +31,17 @@ export async function activate(ctx: vscode.ExtensionContext) {
             let dest = await vscode.window.showInputBox({ placeHolder: 'Save infoset as:' });
             if (dest) {
                 fs.copyFile(tmp(sid), dest, async () => {
-                    await vscode.window.showInformationMessage(`Wrote infoset to ${dest}`);
+                    const choice = await vscode.window.showInformationMessage(`Wrote infoset to ${dest}`, 'View', 'Delete');
+                    let uri = Uri.parse(dest!);
+                    switch (choice) {
+                        case 'View': 
+                            let xml = await vscode.workspace.openTextDocument(uri);
+                            await vscode.window.showTextDocument(xml, { viewColumn: vscode.ViewColumn.Beside });
+                            break;
+                        case 'Delete': 
+                            fs.unlinkSync(dest!); 
+                            break;
+                    }
                 });
             }
         }
