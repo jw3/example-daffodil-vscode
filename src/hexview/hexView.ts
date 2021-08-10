@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
+import * as daf from "../daffodil";
 import * as fs from "fs";
 import * as hexy from "hexy";
 import XDGAppPaths from 'xdg-app-paths';
-import { DaffodilData } from "../daffodil";
+import { ConfigEvent, DaffodilData } from "../daffodil";
 const xdgAppPaths = XDGAppPaths({"name": "dapodil"});
 
 export class DebuggerHexView {
@@ -78,8 +79,13 @@ export class DebuggerHexView {
     // Overriden onDebugSessionCustomEvent method
     onDebugSessionCustomEvent(e: vscode.DebugSessionCustomEvent) {
         if (e.session.type === 'dfdl') {
-            if (e.event === 'daffodil.data') {
-                this.onDisplayHex(e.session, e.body);
+            switch(e.event) {
+                case daf.configEvent:
+                    this.setDataFile(e.body);
+                    break;
+                case daf.dataEvent:
+                    this.onDisplayHex(e.session, e.body);
+                    break;
             }
         }
     }
@@ -95,23 +101,8 @@ export class DebuggerHexView {
     }
 
     // Method for retrieving the data file used
-    async setDataFile() {
-        let config = vscode.workspace.getConfiguration("launch", vscode.workspace.workspaceFolders ? vscode.workspace.workspaceFolders[0].uri : vscode.Uri.parse(""));
-        let values = config.get('configurations', "");
-        let dataFile = `${xdgAppPaths.data()}/.dataFile`;
-
-        // If no config exists or data file exists get the data file path from the .dataFile
-        if (values.length === 0 || fs.existsSync(dataFile)) {
-            this.dataFile = fs.readFileSync(dataFile).toString();
-        }
-        else {
-            if (values[0]["data"].includes("${workspaceFolder}") && vscode.workspace.workspaceFolders) {
-                this.dataFile = `${vscode.workspace.workspaceFolders[0].uri.fsPath}${values[0]["data"].split("${workspaceFolder}")[1]}`;
-            }
-            else {
-                this.dataFile = values[0]["data"];
-            }
-        }
+    async setDataFile(cfg: ConfigEvent) {
+        this.dataFile = cfg.launchArgs.dataPath;
     }
 
     // Method for getting the selection range
@@ -206,10 +197,6 @@ export class DebuggerHexView {
         }
         
         this.bytePos1b = body.bytePos1b;
-
-        if (this.dataFile === "") {
-            await this.setDataFile();
-        }
 
         let file = fs.readFileSync(this.dataFile);
         let hex = hexy.hexy(file);
