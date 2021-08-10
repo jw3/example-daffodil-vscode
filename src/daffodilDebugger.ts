@@ -7,6 +7,10 @@ import { HttpClient } from 'typed-rest-client/HttpClient';
 import { RestClient } from 'typed-rest-client/RestClient';
 import XDGAppPaths from 'xdg-app-paths';
 const xdgAppPaths = XDGAppPaths({"name": "dapodil"});
+const backend = {
+    owner: "jw3",
+    repo: "example-daffodil-vscode",
+};
 
 // Class for getting release data
 export class Release {
@@ -42,7 +46,7 @@ export async function getDataFileFromFolder(dataFolder: string) {
 export async function getDebugVersion(config: vscode.DebugConfiguration) {
     if (!config.dapodilVersion) {        
         const client = new RestClient("client");
-        let request = await client.get<Release[]>('https://api.github.com/repos/jw3/example-daffodil-debug/tags');
+        let request = await client.get<Release[]>(`https://api.github.com/repos/${backend.owner}/${backend.repo}/tags`);
 
         if (request.statusCode !== 200 || !request.result) {
             const err: Error = new Error(`Check request url, and tags of the repo. Follow this template if not already https://api.github.com/repos/{owner}/{rep_name}/tags`);
@@ -89,7 +93,7 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
             if (!fs.existsSync(`${rootPath}/daffodil-debugger-${dapodilVersion.substring(1)}`)) {
                 // Get da-podil of version entered using http client
                 const client = new HttpClient("client");
-                const dapodilUrl = `https://github.com/jw3/example-daffodil-debug/releases/download/${dapodilVersion}/daffodil-debugger-${dapodilVersion.substring(1)}.zip`;
+                const dapodilUrl = `https://github.com/${backend.owner}/${backend.repo}/releases/download/${dapodilVersion}/daffodil-debugger-${dapodilVersion.substring(1)}.zip`;
                 const response = await client.get(dapodilUrl);
                 
                 if (response.message.statusCode !== 200) {
