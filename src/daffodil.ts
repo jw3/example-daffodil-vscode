@@ -1,3 +1,8 @@
+export const dataEvent = 'daffodil.data';
+export interface DaffodilData {
+    bytePos1b: number;
+}
+
 export const infosetEvent = 'daffodil.infoset';
 export interface InfosetEvent {        
     content: string;

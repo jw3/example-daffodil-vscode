@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { DaffodilData } from "./types";
 import * as fs from "fs";
 import * as hexy from "hexy";
 import XDGAppPaths from 'xdg-app-paths';
+import { DaffodilData } from "../daffodil";
 const xdgAppPaths = XDGAppPaths({"name": "dapodil"});
 
 export class DebuggerHexView {
