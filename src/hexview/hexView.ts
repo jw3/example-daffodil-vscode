@@ -63,7 +63,6 @@ export class DebuggerHexView {
     // Overriden onTerminatedDebugSession method
     onTerminatedDebugSession(session: vscode.DebugSession) {
         if (session.type === 'dfdl') {
-            this.deleteFile(`${xdgAppPaths.data()}/.dataFile`);
             this.deleteFile(`${xdgAppPaths.data()}/.arrow.svg`);
             vscode.window.visibleTextEditors.forEach(editior => {
                 if (editior.document.fileName === this.hexFile) {
