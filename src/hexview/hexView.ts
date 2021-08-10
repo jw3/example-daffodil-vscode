@@ -99,8 +99,8 @@ export class DebuggerHexView {
         }
     }
 
-    // Method for retrieving the data file used
-    async setDataFile(cfg: ConfigEvent) {
+    // Method for extracting the data file used
+    setDataFile(cfg: ConfigEvent) {
         this.dataFile = cfg.launchArgs.dataPath;
     }
 
