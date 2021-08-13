@@ -10,13 +10,14 @@ lazy val commonSettings = {
       "org.apache.daffodil" %% "daffodil-sapi" % daffodilVer,
       "org.apache.daffodil" %% "daffodil-runtime1" % daffodilVer,
     ),
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, "daffodilVersion" -> daffodilVer)
+    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, "daffodilVersion" -> daffodilVer),
+    packageName := s"${name.value}-$daffodilVer",
   )
 }
 
 lazy val commonPlugins = Seq(BuildInfoPlugin, GitVersioning, JavaAppPackaging, UniversalPlugin)
 
-lazy val dapodil = project
+lazy val `daffodil-debugger` = project
   .in(file("."))
   .settings(commonSettings)
   .settings(publish / skip := true)
@@ -35,6 +36,6 @@ lazy val core = project
       "com.monovore" %% "decline-effect" % "2.1.0",
       "org.typelevel" %% "log4cats-slf4j" % "2.1.0",
     ),
-    buildInfoPackage := "org.apache.daffodil.debugger.dap"
+    buildInfoPackage := "org.apache.daffodil.debugger.dap",
   )
   .enablePlugins(commonPlugins: _*)
