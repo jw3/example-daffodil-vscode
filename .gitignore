@@ -14,3 +14,4 @@ datafile-hex
 
 target
 .bsp
+src/version.ts
