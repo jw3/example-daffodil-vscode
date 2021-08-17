@@ -1,7 +1,7 @@
 {
   "name": "daffodil-debug",
   "displayName": "Daffodil Debug",
-  "version": "0.0.7",
+  "version": "0.0.10",
   "publisher": "jw3",
   "description": "Daffodil Schema Debugger: debug DFDL schema files using Apache Daffodil.",
   "license": "Apache-2.0",
@@ -13,7 +13,7 @@
   },
   "icon": "images/daffodil.jpg",
   "categories": [
-    "Debuggers"
+    "Debuggers", "Snippets"
   ],
   "private": true,
   "repository": {
@@ -74,6 +74,12 @@
     "request": "never"
   },
   "contributes": {
+    "snippets": [
+      {
+        "language": "xml",
+        "path": "./snippets/snippets.json"
+      }
+    ],
     "menus": {
       "editor/title/run": [
         {
