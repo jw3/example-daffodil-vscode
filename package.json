@@ -208,11 +208,6 @@
                 "type": "boolean",
                 "description": "Enable connection to running DAP Server",
                 "default": false
-              },
-              "dapodilVersion": {
-                "type": "string",
-                "description": "Version of the dapoil debugger to run/use",
-                "default": ""
               }
             }
           }
@@ -225,7 +220,6 @@
             "program": "${command:AskForProgramName}",
             "stopOnEntry": true,
             "data": "${command:AskForDataName}",
-				    "dapodilVersion": "v0.0.9-1",
 				    "infosetOutput": {
 					    "type": "file",
 					    "path": "${workspaceFolder}/infoset.xml"
@@ -244,7 +238,6 @@
               "program": "^\"\\${command:AskForProgramName}\"",
               "stopOnEntry": true,
               "data": "^\"\\${command:AskForDataName}\"",
-              "dapodilVersion": "v0.0.9-1",
               "infosetOutput": {
                 "type": "file",
                 "path": "${workspaceFolder}/infoset.xml"
