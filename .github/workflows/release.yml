@@ -40,4 +40,4 @@ jobs:
           prerelease: false
           files: |
             ${{github.workspace}}/daffodil-debug-${{env.GIT_TAG}}.vsix
-            ${{github.workspace}}/target/universal/daffodil-debugger-*.zip
+            ${{github.workspace}}/server/core/target/universal/daffodil-debugger-*.zip
