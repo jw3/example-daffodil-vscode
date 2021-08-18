@@ -24,7 +24,10 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
-      
+
+      - name: Yarn Compile
+        run: yarn compile
+
       - name: Create vsix
         run: |
           yarn run package -o daffodil-debug-${{env.GIT_TAG}}.vsix
