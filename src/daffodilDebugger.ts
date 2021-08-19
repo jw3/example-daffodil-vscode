@@ -18,7 +18,7 @@ class Artifact {
     
     name = `daffodil-debugger-${this.daffodilVersion}-${this.version}`;
     archive = `${this.name}.zip`;
-    archiveUrl = (backend: Backend) => `https://github.com/${backend.owner}/${backend.repo}/releases/download/${this.version}/${this.archive}`;
+    archiveUrl = (backend: Backend) => `https://github.com/${backend.owner}/${backend.repo}/releases/download/v${this.version}/${this.archive}`;
     scriptName = os.platform() === 'win32' ? "daffodil-debugger.bat" : "./daffodil-debugger";
 }
 
@@ -49,11 +49,11 @@ export async function getDataFileFromFolder(dataFolder: string) {
         canSelectMany: false, openLabel: 'Select',
         canSelectFiles: true, canSelectFolders: false, defaultUri: vscode.Uri.parse(dataFolder)
     })
-        .then(fileUri => {
-            if (fileUri && fileUri[0]) {
-                return fileUri[0].fsPath;
-            }
-        });
+    .then(fileUri => {
+        if (fileUri && fileUri[0]) {
+            return fileUri[0].fsPath;
+        }
+    });
 }
 
 // Function for getting the daffodil-debugger
