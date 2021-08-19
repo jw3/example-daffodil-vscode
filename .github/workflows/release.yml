@@ -12,10 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Export tag to env
+      - name: Export git tag and package.json version
         run: |
           GIT_TAG=$(echo ${GITHUB_REF#refs/*/} | cut -d 'v' -f 2)
+          LIB_VERSION=$(node -p "JSON.stringify(require('./package.json').version)")
           echo "GIT_TAG=$GIT_TAG" >> $GITHUB_ENV
+          echo "LIB_VERSION=$LIB_VERSION" >> $GITHUB_ENV
+
+      - name: Check if git tag match package version
+        run: if [[ ${{env.GIT_TAG}} != ${{env.LIB_VERSION}} ]]; then exit 1; else exit 0; fi
+        shell: bash
       
       - name: Create backend package
         run: |
@@ -25,10 +31,6 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
-
-      - name: Fix version in package.json
-        run: |
-          sed -i "s|\s\s\"version\":.*|  \"version\": \"${{env.GIT_TAG}}\",|" package.json
 
       - name: Install dependencies
         run: yarn install
