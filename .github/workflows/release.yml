@@ -15,7 +15,7 @@ jobs:
       - name: Export git tag and package.json version
         run: |
           GIT_TAG=$(echo ${GITHUB_REF#refs/*/} | cut -d 'v' -f 2)
-          LIB_VERSION=$(node -p "JSON.stringify(require('./package.json').version)")
+          LIB_VERSION=$(echo $(node -p "JSON.stringify(require('./package.json').version)") | sed 's|"||g')
           echo "GIT_TAG=$GIT_TAG" >> $GITHUB_ENV
           echo "LIB_VERSION=$LIB_VERSION" >> $GITHUB_ENV
 
