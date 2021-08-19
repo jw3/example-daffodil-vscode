@@ -19,7 +19,7 @@ jobs:
           echo "GIT_TAG=$GIT_TAG" >> $GITHUB_ENV
           echo "LIB_VERSION=$LIB_VERSION" >> $GITHUB_ENV
 
-      - name: Check if git tag match package version
+      - name: Check if git tag matches package version
         run: if [[ ${{env.GIT_TAG}} != ${{env.LIB_VERSION}} ]]; then exit 1; else exit 0; fi
         shell: bash
       
