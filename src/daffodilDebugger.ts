@@ -119,7 +119,7 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
             // Start debugger in terminal based on scriptName
             let terminal = vscode.window.createTerminal({
                 name: artifact.scriptName,
-                cwd: `${rootPath}/daffodil-debugger-${LIB_VERSION}/bin/`,
+                cwd: `${rootPath}/daffodil-debugger-${daffodilVersion}-${LIB_VERSION}/bin/`,
                 hideFromUser: false,
                 shellPath: artifact.scriptName,
             });
