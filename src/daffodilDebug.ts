@@ -21,18 +21,18 @@ import {
   Source,
   Handles,
   Breakpoint,
-} from 'vscode-debugadapter';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { basename } from 'path';
+} from 'vscode-debugadapter'
+import { DebugProtocol } from 'vscode-debugprotocol'
+import { basename } from 'path'
 import {
   DaffodilRuntime,
   IDaffodilBreakpoint,
   FileAccessor,
-} from './daffodilRuntime';
-import { Subject } from 'await-notify';
+} from './daffodilRuntime'
+import { Subject } from 'await-notify'
 
 function timeout(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /**
@@ -43,67 +43,67 @@ function timeout(ms: number) {
  */
 interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   /** An absolute path to the "program" to debug. */
-  program: string;
+  program: string
   /** Automatically stop target after launch. If not specified, target does not stop. */
-  stopOnEntry?: boolean;
+  stopOnEntry?: boolean
   /** enable logging the Debug Adapter Protocol */
-  trace?: boolean;
+  trace?: boolean
   /** run without debugging */
-  noDebug?: boolean;
+  noDebug?: boolean
 }
 
 export class DaffodilDebugSession extends LoggingDebugSession {
   // we don't support multiple threads, so we can use a hardcoded ID for the default thread
-  private static threadID = 1;
+  private static threadID = 1
 
   // a Daffodil runtime (or debugger)
-  private _runtime: DaffodilRuntime;
+  private _runtime: DaffodilRuntime
 
-  private _variableHandles = new Handles<string>();
+  private _variableHandles = new Handles<string>()
 
-  private _configurationDone = new Subject();
+  private _configurationDone = new Subject()
 
-  private _cancelationTokens = new Map<number, boolean>();
-  private _isLongrunning = new Map<number, boolean>();
+  private _cancelationTokens = new Map<number, boolean>()
+  private _isLongrunning = new Map<number, boolean>()
 
-  private _reportProgress = false;
-  private _progressId = 10000;
-  private _cancelledProgressId: string | undefined = undefined;
-  private _isProgressCancellable = true;
+  private _reportProgress = false
+  private _progressId = 10000
+  private _cancelledProgressId: string | undefined = undefined
+  private _isProgressCancellable = true
 
-  private _showHex = false;
-  private _useInvalidatedEvent = false;
+  private _showHex = false
+  private _useInvalidatedEvent = false
 
   /**
    * Creates a new debug adapter that is used for one debug session.
    * We configure the default implementation of a debug adapter here.
    */
   public constructor(fileAccessor: FileAccessor) {
-    super('daffodil-debugger.txt');
+    super('daffodil-debugger.txt')
 
     // this debugger uses zero-based lines and columns
-    this.setDebuggerLinesStartAt1(false);
-    this.setDebuggerColumnsStartAt1(false);
+    this.setDebuggerLinesStartAt1(false)
+    this.setDebuggerColumnsStartAt1(false)
 
-    this._runtime = new DaffodilRuntime(fileAccessor);
+    this._runtime = new DaffodilRuntime(fileAccessor)
 
     // setup event handlers
     this._runtime.on('stopOnEntry', () => {
-      this.sendEvent(new StoppedEvent('entry', DaffodilDebugSession.threadID));
-    });
+      this.sendEvent(new StoppedEvent('entry', DaffodilDebugSession.threadID))
+    })
     this._runtime.on('stopOnStep', () => {
-      this.sendEvent(new StoppedEvent('step', DaffodilDebugSession.threadID));
-    });
+      this.sendEvent(new StoppedEvent('step', DaffodilDebugSession.threadID))
+    })
     this._runtime.on('stopOnBreakpoint', () => {
       this.sendEvent(
         new StoppedEvent('breakpoint', DaffodilDebugSession.threadID)
-      );
-    });
+      )
+    })
     this._runtime.on('stopOnDataBreakpoint', () => {
       this.sendEvent(
         new StoppedEvent('data breakpoint', DaffodilDebugSession.threadID)
-      );
-    });
+      )
+    })
     this._runtime.on('stopOnException', (exception) => {
       if (exception) {
         this.sendEvent(
@@ -111,37 +111,37 @@ export class DaffodilDebugSession extends LoggingDebugSession {
             `exception(${exception})`,
             DaffodilDebugSession.threadID
           )
-        );
+        )
       } else {
         this.sendEvent(
           new StoppedEvent('exception', DaffodilDebugSession.threadID)
-        );
+        )
       }
-    });
+    })
     this._runtime.on('breakpointValidated', (bp: IDaffodilBreakpoint) => {
       this.sendEvent(
         new BreakpointEvent('changed', {
           verified: bp.verified,
           id: bp.id,
         } as DebugProtocol.Breakpoint)
-      );
-    });
+      )
+    })
     this._runtime.on('output', (text, filePath, line, column) => {
-      const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`);
+      const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`)
 
       if (text === 'start' || text === 'startCollapsed' || text === 'end') {
-        e.body.group = text;
-        e.body.output = `group-${text}\n`;
+        e.body.group = text
+        e.body.output = `group-${text}\n`
       }
 
-      e.body.source = this.createSource(filePath);
-      e.body.line = this.convertDebuggerLineToClient(line);
-      e.body.column = this.convertDebuggerColumnToClient(column);
-      this.sendEvent(e);
-    });
+      e.body.source = this.createSource(filePath)
+      e.body.line = this.convertDebuggerLineToClient(line)
+      e.body.column = this.convertDebuggerColumnToClient(column)
+      this.sendEvent(e)
+    })
     this._runtime.on('end', () => {
-      this.sendEvent(new TerminatedEvent());
-    });
+      this.sendEvent(new TerminatedEvent())
+    })
   }
 
   /**
@@ -153,42 +153,42 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     args: DebugProtocol.InitializeRequestArguments
   ): void {
     if (args.supportsProgressReporting) {
-      this._reportProgress = true;
+      this._reportProgress = true
     }
     if (args.supportsInvalidatedEvent) {
-      this._useInvalidatedEvent = true;
+      this._useInvalidatedEvent = true
     }
 
     // build and return the capabilities of this debug adapter:
-    response.body = response.body || {};
+    response.body = response.body || {}
 
     // the adapter implements the configurationDoneRequest.
-    response.body.supportsConfigurationDoneRequest = true;
+    response.body.supportsConfigurationDoneRequest = true
 
     // make VS Code use 'evaluate' when hovering over source
-    response.body.supportsEvaluateForHovers = true;
+    response.body.supportsEvaluateForHovers = true
 
     // make VS Code show a 'step back' button
-    response.body.supportsStepBack = true;
+    response.body.supportsStepBack = true
 
     // make VS Code support data breakpoints
-    response.body.supportsDataBreakpoints = true;
+    response.body.supportsDataBreakpoints = true
 
     // make VS Code support completion in REPL
-    response.body.supportsCompletionsRequest = true;
-    response.body.completionTriggerCharacters = ['.', '['];
+    response.body.supportsCompletionsRequest = true
+    response.body.completionTriggerCharacters = ['.', '[']
 
     // make VS Code send cancelRequests
-    response.body.supportsCancelRequest = true;
+    response.body.supportsCancelRequest = true
 
     // make VS Code send the breakpointLocations request
-    response.body.supportsBreakpointLocationsRequest = true;
+    response.body.supportsBreakpointLocationsRequest = true
 
     // make VS Code provide "Step in Target" functionality
-    response.body.supportsStepInTargetsRequest = true;
+    response.body.supportsStepInTargetsRequest = true
 
     // the adapter defines two exceptions filters, one with support for conditions.
-    response.body.supportsExceptionFilterOptions = true;
+    response.body.supportsExceptionFilterOptions = true
     response.body.exceptionBreakpointFilters = [
       {
         filter: 'namedException',
@@ -205,17 +205,17 @@ export class DaffodilDebugSession extends LoggingDebugSession {
         default: true,
         supportsCondition: false,
       },
-    ];
+    ]
 
     // make VS Code send exceptionInfoRequests
-    response.body.supportsExceptionInfoRequest = true;
+    response.body.supportsExceptionInfoRequest = true
 
-    this.sendResponse(response);
+    this.sendResponse(response)
 
     // since this debug adapter can accept configuration requests like 'setBreakpoint' at any time,
     // we request them early by sending an 'initializeRequest' to the frontend.
     // The frontend will end the configuration sequence by calling 'configurationDone' request.
-    this.sendEvent(new InitializedEvent());
+    this.sendEvent(new InitializedEvent())
   }
 
   /**
@@ -226,10 +226,10 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     response: DebugProtocol.ConfigurationDoneResponse,
     args: DebugProtocol.ConfigurationDoneArguments
   ): void {
-    super.configurationDoneRequest(response, args);
+    super.configurationDoneRequest(response, args)
 
     // notify the launchRequest that configuration has finished
-    this._configurationDone.notify();
+    this._configurationDone.notify()
   }
 
   protected async launchRequest(
@@ -240,49 +240,49 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     logger.setup(
       args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop,
       false
-    );
+    )
 
     // wait until configuration has finished (and configurationDoneRequest has been called)
-    await this._configurationDone.wait(1000);
+    await this._configurationDone.wait(1000)
 
     // start the program in the runtime
-    await this._runtime.start(args.program, !!args.stopOnEntry, !!args.noDebug);
+    await this._runtime.start(args.program, !!args.stopOnEntry, !!args.noDebug)
 
-    this.sendResponse(response);
+    this.sendResponse(response)
   }
 
   protected async setBreakPointsRequest(
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments
   ): Promise<void> {
-    const path = args.source.path as string;
-    const clientLines = args.lines || [];
+    const path = args.source.path as string
+    const clientLines = args.lines || []
 
     // clear all breakpoints for this file
-    this._runtime.clearBreakpoints(path);
+    this._runtime.clearBreakpoints(path)
 
     // set and verify breakpoint locations
     const actualBreakpoints0 = clientLines.map(async (l) => {
       const { verified, line, id } = await this._runtime.setBreakPoint(
         path,
         this.convertClientLineToDebugger(l)
-      );
+      )
       const bp = new Breakpoint(
         verified,
         this.convertDebuggerLineToClient(line)
-      ) as DebugProtocol.Breakpoint;
-      bp.id = id;
-      return bp;
-    });
+      ) as DebugProtocol.Breakpoint
+      bp.id = id
+      return bp
+    })
     const actualBreakpoints = await Promise.all<DebugProtocol.Breakpoint>(
       actualBreakpoints0
-    );
+    )
 
     // send back the actual breakpoint positions
     response.body = {
       breakpoints: actualBreakpoints,
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected breakpointLocationsRequest(
@@ -294,52 +294,52 @@ export class DaffodilDebugSession extends LoggingDebugSession {
       const bps = this._runtime.getBreakpoints(
         args.source.path,
         this.convertClientLineToDebugger(args.line)
-      );
+      )
       response.body = {
         breakpoints: bps.map((col) => {
           return {
             line: args.line,
             column: this.convertDebuggerColumnToClient(col),
-          };
+          }
         }),
-      };
+      }
     } else {
       response.body = {
         breakpoints: [],
-      };
+      }
     }
-    this.sendResponse(response);
+    this.sendResponse(response)
   }
 
   protected async setExceptionBreakPointsRequest(
     response: DebugProtocol.SetExceptionBreakpointsResponse,
     args: DebugProtocol.SetExceptionBreakpointsArguments
   ): Promise<void> {
-    let namedException: string | undefined = undefined;
-    let otherExceptions = false;
+    let namedException: string | undefined = undefined
+    let otherExceptions = false
 
     if (args.filterOptions) {
       for (const filterOption of args.filterOptions) {
         switch (filterOption.filterId) {
           case 'namedException':
-            namedException = args.filterOptions[0].condition;
-            break;
+            namedException = args.filterOptions[0].condition
+            break
           case 'otherExceptions':
-            otherExceptions = true;
-            break;
+            otherExceptions = true
+            break
         }
       }
     }
 
     if (args.filters) {
       if (args.filters.indexOf('otherExceptions') >= 0) {
-        otherExceptions = true;
+        otherExceptions = true
       }
     }
 
-    this._runtime.setExceptionsFilters(namedException, otherExceptions);
+    this._runtime.setExceptionsFilters(namedException, otherExceptions)
 
-    this.sendResponse(response);
+    this.sendResponse(response)
   }
 
   protected exceptionInfoRequest(
@@ -355,28 +355,27 @@ export class DaffodilDebugSession extends LoggingDebugSession {
         typeName: 'Short type name of the exception object',
         stackTrace: 'stack frame 1\nstack frame 2',
       },
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
     // runtime supports no threads so just return a default thread.
     response.body = {
       threads: [new Thread(DaffodilDebugSession.threadID, 'thread 1')],
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments
   ): void {
-    const startFrame =
-      typeof args.startFrame === 'number' ? args.startFrame : 0;
-    const maxLevels = typeof args.levels === 'number' ? args.levels : 1000;
-    const endFrame = startFrame + maxLevels;
+    const startFrame = typeof args.startFrame === 'number' ? args.startFrame : 0
+    const maxLevels = typeof args.levels === 'number' ? args.levels : 1000
+    const endFrame = startFrame + maxLevels
 
-    const stk = this._runtime.stack(startFrame, endFrame);
+    const stk = this._runtime.stack(startFrame, endFrame)
 
     response.body = {
       stackFrames: stk.frames.map((f) => {
@@ -385,18 +384,18 @@ export class DaffodilDebugSession extends LoggingDebugSession {
           f.name,
           this.createSource(f.file),
           this.convertDebuggerLineToClient(f.line)
-        );
+        )
         if (typeof f.column === 'number') {
-          sf.column = this.convertDebuggerColumnToClient(f.column);
+          sf.column = this.convertDebuggerColumnToClient(f.column)
         }
-        return sf;
+        return sf
       }),
       //no totalFrames: 				// VS Code has to probe/guess. Should result in a max. of two requests
       totalFrames: stk.count, // stk.count is the correct size, should result in a max. of two requests
       //totalFrames: 1000000 			// not the correct size, should result in a max. of two requests
       //totalFrames: endFrame + 20 	// dynamically increases the size with every requested chunk, results in paging
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected scopesRequest(
@@ -408,8 +407,8 @@ export class DaffodilDebugSession extends LoggingDebugSession {
         new Scope('Local', this._variableHandles.create('local'), false),
         new Scope('Global', this._variableHandles.create('global'), true),
       ],
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected async variablesRequest(
@@ -417,36 +416,36 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     args: DebugProtocol.VariablesArguments,
     request?: DebugProtocol.Request
   ) {
-    const variables: DebugProtocol.Variable[] = [];
+    const variables: DebugProtocol.Variable[] = []
 
     if (this._isLongrunning.get(args.variablesReference)) {
       // long running
 
       if (request) {
-        this._cancelationTokens.set(request.seq, false);
+        this._cancelationTokens.set(request.seq, false)
       }
 
       for (let i = 0; i < 100; i++) {
-        await timeout(1000);
+        await timeout(1000)
         variables.push({
           name: `i_${i}`,
           type: 'integer',
           value: `${i}`,
           variablesReference: 0,
-        });
+        })
         if (request && this._cancelationTokens.get(request.seq)) {
-          break;
+          break
         }
       }
 
       if (request) {
-        this._cancelationTokens.delete(request.seq);
+        this._cancelationTokens.delete(request.seq)
       }
     } else {
-      const id = this._variableHandles.get(args.variablesReference);
+      const id = this._variableHandles.get(args.variablesReference)
 
       if (id) {
-        const i = 12345678;
+        const i = 12345678
         variables.push({
           name: id + '_i',
           type: 'integer',
@@ -454,162 +453,162 @@ export class DaffodilDebugSession extends LoggingDebugSession {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           __vscodeVariableMenuContext: 'simple',
           variablesReference: 0,
-        } as DebugProtocol.Variable);
+        } as DebugProtocol.Variable)
         variables.push({
           name: id + '_f',
           type: 'float',
           value: '3.14',
           variablesReference: 0,
-        });
+        })
         variables.push({
           name: id + '_f',
           type: 'float',
           value: '6.28',
           variablesReference: 0,
-        });
+        })
         variables.push({
           name: id + '_f',
           type: 'float',
           value: '6.28',
           variablesReference: 0,
-        });
+        })
         variables.push({
           name: id + '_s',
           type: 'string',
           value: 'hello world',
           variablesReference: 0,
-        });
+        })
         variables.push({
           name: id + '_o',
           type: 'object',
           value: 'Object',
           variablesReference: this._variableHandles.create(id + '_o'),
-        });
+        })
 
         // cancellation support for long running requests
-        const nm = id + '_long_running';
-        const ref = this._variableHandles.create(id + '_lr');
+        const nm = id + '_long_running'
+        const ref = this._variableHandles.create(id + '_lr')
         variables.push({
           name: nm,
           type: 'object',
           value: 'Object',
           variablesReference: ref,
-        });
-        this._isLongrunning.set(ref, true);
+        })
+        this._isLongrunning.set(ref, true)
       }
     }
 
     response.body = {
       variables: variables,
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected continueRequest(
     response: DebugProtocol.ContinueResponse,
     args: DebugProtocol.ContinueArguments
   ): void {
-    this._runtime.continue();
-    this.sendResponse(response);
+    this._runtime.continue()
+    this.sendResponse(response)
   }
 
   protected reverseContinueRequest(
     response: DebugProtocol.ReverseContinueResponse,
     args: DebugProtocol.ReverseContinueArguments
   ): void {
-    this._runtime.continue(true);
-    this.sendResponse(response);
+    this._runtime.continue(true)
+    this.sendResponse(response)
   }
 
   protected nextRequest(
     response: DebugProtocol.NextResponse,
     args: DebugProtocol.NextArguments
   ): void {
-    this._runtime.step();
-    this.sendResponse(response);
+    this._runtime.step()
+    this.sendResponse(response)
   }
 
   protected stepBackRequest(
     response: DebugProtocol.StepBackResponse,
     args: DebugProtocol.StepBackArguments
   ): void {
-    this._runtime.step(true);
-    this.sendResponse(response);
+    this._runtime.step(true)
+    this.sendResponse(response)
   }
 
   protected stepInTargetsRequest(
     response: DebugProtocol.StepInTargetsResponse,
     args: DebugProtocol.StepInTargetsArguments
   ) {
-    const targets = this._runtime.getStepInTargets(args.frameId);
+    const targets = this._runtime.getStepInTargets(args.frameId)
     response.body = {
       targets: targets.map((t) => {
-        return { id: t.id, label: t.label };
+        return { id: t.id, label: t.label }
       }),
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected stepInRequest(
     response: DebugProtocol.StepInResponse,
     args: DebugProtocol.StepInArguments
   ): void {
-    this._runtime.stepIn(args.targetId);
-    this.sendResponse(response);
+    this._runtime.stepIn(args.targetId)
+    this.sendResponse(response)
   }
 
   protected stepOutRequest(
     response: DebugProtocol.StepOutResponse,
     args: DebugProtocol.StepOutArguments
   ): void {
-    this._runtime.stepOut();
-    this.sendResponse(response);
+    this._runtime.stepOut()
+    this.sendResponse(response)
   }
 
   protected async evaluateRequest(
     response: DebugProtocol.EvaluateResponse,
     args: DebugProtocol.EvaluateArguments
   ): Promise<void> {
-    let reply: string | undefined = undefined;
+    let reply: string | undefined = undefined
 
     if (args.context === 'repl') {
       // 'evaluate' supports to create and delete breakpoints from the 'repl':
-      const matches = /new +([0-9]+)/.exec(args.expression);
+      const matches = /new +([0-9]+)/.exec(args.expression)
       if (matches && matches.length === 2) {
         const mbp = await this._runtime.setBreakPoint(
           this._runtime.sourceFile,
           this.convertClientLineToDebugger(parseInt(matches[1]))
-        );
+        )
         const bp = new Breakpoint(
           mbp.verified,
           this.convertDebuggerLineToClient(mbp.line),
           undefined,
           this.createSource(this._runtime.sourceFile)
-        ) as DebugProtocol.Breakpoint;
-        bp.id = mbp.id;
-        this.sendEvent(new BreakpointEvent('new', bp));
-        reply = `breakpoint created`;
+        ) as DebugProtocol.Breakpoint
+        bp.id = mbp.id
+        this.sendEvent(new BreakpointEvent('new', bp))
+        reply = `breakpoint created`
       } else {
-        const matches = /del +([0-9]+)/.exec(args.expression);
+        const matches = /del +([0-9]+)/.exec(args.expression)
         if (matches && matches.length === 2) {
           const mbp = this._runtime.clearBreakPoint(
             this._runtime.sourceFile,
             this.convertClientLineToDebugger(parseInt(matches[1]))
-          );
+          )
           if (mbp) {
-            const bp = new Breakpoint(false) as DebugProtocol.Breakpoint;
-            bp.id = mbp.id;
-            this.sendEvent(new BreakpointEvent('removed', bp));
-            reply = `breakpoint deleted`;
+            const bp = new Breakpoint(false) as DebugProtocol.Breakpoint
+            bp.id = mbp.id
+            this.sendEvent(new BreakpointEvent('removed', bp))
+            reply = `breakpoint deleted`
           }
         } else {
-          const matches = /progress/.exec(args.expression);
+          const matches = /progress/.exec(args.expression)
           if (matches && matches.length === 1) {
             if (this._reportProgress) {
-              reply = `progress started`;
-              this.progressSequence();
+              reply = `progress started`
+              this.progressSequence()
             } else {
-              reply = `frontend doesn't support progress (capability 'supportsProgressReporting' not set)`;
+              reply = `frontend doesn't support progress (capability 'supportsProgressReporting' not set)`
             }
           }
         }
@@ -621,43 +620,43 @@ export class DaffodilDebugSession extends LoggingDebugSession {
         ? reply
         : `evaluate(context: '${args.context}', '${args.expression}')`,
       variablesReference: 0,
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   private async progressSequence() {
-    const ID = '' + this._progressId++;
+    const ID = '' + this._progressId++
 
-    await timeout(100);
+    await timeout(100)
 
     const title = this._isProgressCancellable
       ? 'Cancellable operation'
-      : 'Long running operation';
+      : 'Long running operation'
     const startEvent: DebugProtocol.ProgressStartEvent = new ProgressStartEvent(
       ID,
       title
-    );
-    startEvent.body.cancellable = this._isProgressCancellable;
-    this._isProgressCancellable = !this._isProgressCancellable;
-    this.sendEvent(startEvent);
-    this.sendEvent(new OutputEvent(`start progress: ${ID}\n`));
+    )
+    startEvent.body.cancellable = this._isProgressCancellable
+    this._isProgressCancellable = !this._isProgressCancellable
+    this.sendEvent(startEvent)
+    this.sendEvent(new OutputEvent(`start progress: ${ID}\n`))
 
-    let endMessage = 'progress ended';
+    let endMessage = 'progress ended'
 
     for (let i = 0; i < 100; i++) {
-      await timeout(500);
-      this.sendEvent(new ProgressUpdateEvent(ID, `progress: ${i}`));
+      await timeout(500)
+      this.sendEvent(new ProgressUpdateEvent(ID, `progress: ${i}`))
       if (this._cancelledProgressId === ID) {
-        endMessage = 'progress cancelled';
-        this._cancelledProgressId = undefined;
-        this.sendEvent(new OutputEvent(`cancel progress: ${ID}\n`));
-        break;
+        endMessage = 'progress cancelled'
+        this._cancelledProgressId = undefined
+        this.sendEvent(new OutputEvent(`cancel progress: ${ID}\n`))
+        break
       }
     }
-    this.sendEvent(new ProgressEndEvent(ID, endMessage));
-    this.sendEvent(new OutputEvent(`end progress: ${ID}\n`));
+    this.sendEvent(new ProgressEndEvent(ID, endMessage))
+    this.sendEvent(new OutputEvent(`end progress: ${ID}\n`))
 
-    this._cancelledProgressId = undefined;
+    this._cancelledProgressId = undefined
   }
 
   protected dataBreakpointInfoRequest(
@@ -669,24 +668,24 @@ export class DaffodilDebugSession extends LoggingDebugSession {
       description: 'cannot break on data access',
       accessTypes: undefined,
       canPersist: false,
-    };
+    }
 
     if (args.variablesReference && args.name) {
-      const id = this._variableHandles.get(args.variablesReference);
+      const id = this._variableHandles.get(args.variablesReference)
       if (id === 'global') {
-        response.body.dataId = args.name;
-        response.body.description = args.name;
-        response.body.accessTypes = ['write'];
-        response.body.canPersist = true;
+        response.body.dataId = args.name
+        response.body.description = args.name
+        response.body.accessTypes = ['write']
+        response.body.canPersist = true
       } else {
-        response.body.dataId = args.name;
-        response.body.description = args.name;
-        response.body.accessTypes = ['read', 'write', 'readWrite'];
-        response.body.canPersist = true;
+        response.body.dataId = args.name
+        response.body.description = args.name
+        response.body.accessTypes = ['read', 'write', 'readWrite']
+        response.body.canPersist = true
       }
     }
 
-    this.sendResponse(response);
+    this.sendResponse(response)
   }
 
   protected setDataBreakpointsRequest(
@@ -694,23 +693,23 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     args: DebugProtocol.SetDataBreakpointsArguments
   ): void {
     // clear all data breakpoints
-    this._runtime.clearAllDataBreakpoints();
+    this._runtime.clearAllDataBreakpoints()
 
     response.body = {
       breakpoints: [],
-    };
+    }
 
     for (const dbp of args.breakpoints) {
       // assume that id is the "address" to break on
       const dataId =
-        dbp.dataId + `_${dbp.accessType ? dbp.accessType : 'write'}`;
-      const ok = this._runtime.setDataBreakpoint(dataId);
+        dbp.dataId + `_${dbp.accessType ? dbp.accessType : 'write'}`
+      const ok = this._runtime.setDataBreakpoint(dataId)
       response.body.breakpoints.push({
         verified: ok,
-      });
+      })
     }
 
-    this.sendResponse(response);
+    this.sendResponse(response)
   }
 
   protected completionsRequest(
@@ -743,8 +742,8 @@ export class DaffodilDebugSession extends LoggingDebugSession {
           sortText: '04',
         },
       ],
-    };
-    this.sendResponse(response);
+    }
+    this.sendResponse(response)
   }
 
   protected cancelRequest(
@@ -752,10 +751,10 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     args: DebugProtocol.CancelArguments
   ) {
     if (args.requestId) {
-      this._cancelationTokens.set(args.requestId, true);
+      this._cancelationTokens.set(args.requestId, true)
     }
     if (args.progressId) {
-      this._cancelledProgressId = args.progressId;
+      this._cancelledProgressId = args.progressId
     }
   }
 
@@ -765,13 +764,13 @@ export class DaffodilDebugSession extends LoggingDebugSession {
     args: any
   ) {
     if (command === 'toggleFormatting') {
-      this._showHex = !this._showHex;
+      this._showHex = !this._showHex
       if (this._useInvalidatedEvent) {
-        this.sendEvent(new InvalidatedEvent(['variables']));
+        this.sendEvent(new InvalidatedEvent(['variables']))
       }
-      this.sendResponse(response);
+      this.sendResponse(response)
     } else {
-      super.customRequest(command, response, args);
+      super.customRequest(command, response, args)
     }
   }
 
@@ -784,6 +783,6 @@ export class DaffodilDebugSession extends LoggingDebugSession {
       undefined,
       undefined,
       'daffodil-adapter-data'
-    );
+    )
   }
 }

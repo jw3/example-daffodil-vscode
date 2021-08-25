@@ -3,45 +3,45 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import assert = require('assert');
-import * as Path from 'path';
-import { DebugClient } from 'vscode-debugadapter-testsupport';
+import assert = require('assert')
+import * as Path from 'path'
+import { DebugClient } from 'vscode-debugadapter-testsupport'
 // import {DebugProtocol} from 'vscode-debugprotocol';
 
 suite('Node Debug Adapter', () => {
-  const DEBUG_ADAPTER = './out/debugAdapter.js';
+  const DEBUG_ADAPTER = './out/debugAdapter.js'
 
-  const PROJECT_ROOT = Path.join(__dirname, '../../');
-  const DATA_ROOT = Path.join(PROJECT_ROOT, 'src/tests/data/');
+  const PROJECT_ROOT = Path.join(__dirname, '../../')
+  const DATA_ROOT = Path.join(PROJECT_ROOT, 'src/tests/data/')
 
-  let dc: DebugClient;
+  let dc: DebugClient
 
   setup(() => {
-    dc = new DebugClient('node', DEBUG_ADAPTER, 'dfdl');
-    return dc.start();
-  });
+    dc = new DebugClient('node', DEBUG_ADAPTER, 'dfdl')
+    return dc.start()
+  })
 
-  teardown(() => dc.stop());
+  teardown(() => dc.stop())
 
   suite('basic', () => {
     test('unknown request should produce error', (done) => {
       dc.send('illegal_request')
         .then(() => {
-          done(new Error('does not report error on unknown request'));
+          done(new Error('does not report error on unknown request'))
         })
         .catch(() => {
-          done();
-        });
-    });
-  });
+          done()
+        })
+    })
+  })
 
   suite('initialize', () => {
     test('should return supported features', () => {
       return dc.initializeRequest().then((response) => {
-        response.body = response.body || {};
-        assert.equal(response.body.supportsConfigurationDoneRequest, true);
-      });
-    });
+        response.body = response.body || {}
+        assert.equal(response.body.supportsConfigurationDoneRequest, true)
+      })
+    })
 
     test("should produce error for invalid 'pathFormat'", (done) => {
       dc.initializeRequest({
@@ -53,37 +53,37 @@ suite('Node Debug Adapter', () => {
         .then((response) => {
           done(
             new Error("does not report error on invalid 'pathFormat' attribute")
-          );
+          )
         })
         .catch((err) => {
           // error expected
-          done();
-        });
-    });
-  });
+          done()
+        })
+    })
+  })
 
   suite('launch', () => {
     test('should run program to the end', () => {
-      const PROGRAM = Path.join(DATA_ROOT, 'works.jpg');
+      const PROGRAM = Path.join(DATA_ROOT, 'works.jpg')
 
       return Promise.all([
         dc.configurationSequence(),
         dc.launch({ program: PROGRAM }),
         dc.waitForEvent('terminated'),
-      ]);
-    });
+      ])
+    })
 
     test('should stop on entry', () => {
-      const PROGRAM = Path.join(DATA_ROOT, 'works.jpg');
-      const ENTRY_LINE = 1;
+      const PROGRAM = Path.join(DATA_ROOT, 'works.jpg')
+      const ENTRY_LINE = 1
 
       return Promise.all([
         dc.configurationSequence(),
         dc.launch({ program: PROGRAM, stopOnEntry: true }),
         dc.assertStoppedLocation('entry', { line: ENTRY_LINE }),
-      ]);
-    });
-  });
+      ])
+    })
+  })
 
   // suite('setBreakpoints', () => {
 
@@ -135,4 +135,4 @@ suite('Node Debug Adapter', () => {
   // 		]);
   // 	});
   // });
-});
+})
