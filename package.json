@@ -82,7 +82,7 @@
     "snippets": [
       {
         "language": "xml",
-        "path": "./snippets/snippets.json"
+        "path": "./snippets/dfdl.json"
       }
     ],
     "menus": {
