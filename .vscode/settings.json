@@ -10,5 +10,9 @@
     "typescript.tsc.autoDetect": "off",
     "files.watcherExclude": {
         "**/target": true
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
     }
 }
