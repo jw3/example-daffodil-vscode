@@ -157,14 +157,14 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
       }
 
       // Get program file before debugger starts to avoid timeout
-      if (config.program === '${command:AskForProgramName}') {
+      if (config.program.includes('${command:AskForProgramName}')) {
         config.program = await vscode.commands.executeCommand(
           'extension.dfdl-debug.getProgramName'
         )
       }
 
       // Get data file before debugger starts to avoid timeout
-      if (config.data === '${command:AskForDataName}') {
+      if (config.data.includes('${command:AskForDataName}')) {
         config.data = await vscode.commands.executeCommand(
           'extension.dfdl-debug.getDataName'
         )
