@@ -17,7 +17,7 @@ export class DebuggerHexView {
   bytePos1b: number = -1
   decorator: vscode.TextEditorDecorationType =
     vscode.window.createTextEditorDecorationType({
-      gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
+      gutterIconPath: '../../images/arrow.svg', //`${xdgAppPaths.data()}/.arrow.svg`,
       gutterIconSize: 'contain',
       color: 'black',
       backgroundColor: 'yellow',
@@ -53,7 +53,7 @@ export class DebuggerHexView {
 
     if (hexLength !== dataPositon) {
       this.decorator = vscode.window.createTextEditorDecorationType({
-        gutterIconPath: `${xdgAppPaths.data()}/.arrow.svg`,
+        gutterIconPath: '../../images/arrow.svg', //`${xdgAppPaths.data()}/.arrow.svg`,
         gutterIconSize: 'contain',
         color: 'black',
         backgroundColor: 'yellow',
@@ -264,7 +264,7 @@ export class DebuggerHexView {
 
     // Create arrow file and open up hex document only on start of debug
     if (this.initialState) {
-      await this.createArrowIconFile()
+      // await this.createArrowIconFile()
       this.initialState = false
     }
 
