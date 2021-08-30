@@ -80,8 +80,14 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
 
     if (vscode.workspace.workspaceFolders !== undefined) {
       let rootPath = xdgAppPaths.data()
+      let xdgDataFolderArray = xdgAppPaths.data().split('/')
+      xdgDataFolderArray.pop()
+      let xdgDataFolderString = xdgDataFolderArray.join('/')
 
-      // If directory for storing debugger does exist create it
+      // If data and app directories for storing debugger does exist create them
+      if (!fs.existsSync(xdgDataFolderString)) {
+        fs.mkdirSync(xdgDataFolderString)
+      }
       if (!fs.existsSync(rootPath)) {
         fs.mkdirSync(rootPath)
       }
