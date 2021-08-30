@@ -3,6 +3,7 @@ import * as fs from 'fs'
 import * as unzip from 'unzip-stream'
 import * as os from 'os'
 import * as child_process from 'child_process'
+import { deactivate } from './extension'
 import { LIB_VERSION } from './version'
 import { HttpClient } from 'typed-rest-client/HttpClient'
 import XDGAppPaths from 'xdg-app-paths'
@@ -75,7 +76,7 @@ export async function getDataFileFromFolder(dataFolder: string) {
 export async function getDebugger(config: vscode.DebugConfiguration) {
   // If useExistingServer var set to false make sure version of debugger entered is downloaded then ran
   if (!config.useExistingServer) {
-    const delay = (ms) => new Promise((res) => setTimeout(res, ms))
+    const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
     if (vscode.workspace.workspaceFolders !== undefined) {
       let rootPath = xdgAppPaths.data()
@@ -163,12 +164,16 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
         )
       }
 
+      if (config.program == '') return stopDebugging();
+
       // Get data file before debugger starts to avoid timeout
       if (config.data.includes('${command:AskForDataName}')) {
         config.data = await vscode.commands.executeCommand(
           'extension.dfdl-debug.getDataName'
         )
       }
+
+      if (config.data === '') return stopDebugging();
 
       // Start debugger in terminal based on scriptName
       let terminal = vscode.window.createTerminal({
@@ -183,4 +188,20 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
       await delay(5000)
     }
   }
+
+  // Function for stopping debugging
+  function stopDebugging() {
+    vscode.debug.stopDebugging()
+    deactivate()
+    vscode.window.activeTerminal?.processId.then((id) => {
+      if (id) {
+        if (os.platform() === 'win32') {
+          child_process.exec(`taskkill /F /PID ${id}`)
+        } else {
+          child_process.exec(`kill -9 ${id}`)
+        }
+      }
+    })
+  }
+
 }
