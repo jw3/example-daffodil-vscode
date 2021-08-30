@@ -164,10 +164,13 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
         )
       }
 
-      if (config.program == '') {
+      if (config.program === '') {
         // need to invalidate a variable data file so the DebugConfigurationProvider doesn't try to resolve it after we return
-        if (config.data.includes('${command:AskForDataName}')) config.data = '';
-        return stopDebugging();
+        if (config.data.includes('${command:AskForDataName}')) {
+          config.data = ''
+        }
+
+        return stopDebugging()
       }
 
       // Get data file before debugger starts to avoid timeout
@@ -177,7 +180,9 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
         )
       }
 
-      if (config.data === '') return stopDebugging();
+      if (config.data === '') {
+        return stopDebugging()
+      }
 
       // Start debugger in terminal based on scriptName
       let terminal = vscode.window.createTerminal({
@@ -207,5 +212,4 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
       }
     })
   }
-
 }

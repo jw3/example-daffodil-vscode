@@ -113,7 +113,7 @@ export function activateDaffodilDebug(
 
             return ''
           })
-          
+
         return programFile
       }
     )
