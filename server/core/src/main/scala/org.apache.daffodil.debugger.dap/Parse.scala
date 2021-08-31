@@ -345,7 +345,7 @@ object Parse {
         startElement.name.map(_.value).getOrElse("???"),
         /* If sourceReference > 0 the contents of the source must be retrieved through
          * the SourceRequest (even if a path is specified). */
-        new Types.Source(startElement.schemaLocation.uriString, 0),
+        new Types.Source(new URI(startElement.schemaLocation.uriString).getPath, 0),
         startElement.schemaLocation.lineNumber
           .map(_.toInt)
           .getOrElse(1), // line numbers start at 1 according to InitializeRequest
