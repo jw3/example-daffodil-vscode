@@ -287,7 +287,10 @@ object Parse {
           Stream(
             Stream.eval(startup),
             parsing.onFinalizeCase(ec => Logger[IO].debug(s"parsing: $ec")),
-            deliverParseData.onFinalizeCase(ec => Logger[IO].debug(s"deliverParseData: $ec")) ++ Stream.eval(
+            deliverParseData.onFinalizeCase {
+              case ec @ Resource.ExitCase.Errored(e) => Logger[IO].warn(e)(s"deliverParseData: $ec")
+              case ec => Logger[IO].debug(s"deliverParseData: $ec")
+            } ++ Stream.eval(
               dapEvents.offer(None) // ensure dapEvents is terminated when the parse is terminated
             ),
             infosetChanges
