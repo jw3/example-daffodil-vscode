@@ -391,6 +391,8 @@ object DAPodil extends IOApp {
         |  daffodilVersion: ${BuildInfo.daffodilVersion}
         |  scalaVersion: ${BuildInfo.scalaVersion}
         |  sbtVersion: ${BuildInfo.sbtVersion}
+        |
+        |Built off commit ${BuildInfo.commit.take(7)} at ${BuildInfo.builtAtString}.
         |******************************************************""".stripMargin
 
   def run(args: List[String]): IO[ExitCode] =
