@@ -102,7 +102,7 @@ export async function getDebugger(config: vscode.DebugConfiguration) {
         }
 
         // Create zip from rest call
-        const filePath = `${rootPath}/${artifact.archive}}`
+        const filePath = `${rootPath}/${artifact.archive}`
         const file = fs.createWriteStream(filePath)
 
         await new Promise((res, rej) => {
