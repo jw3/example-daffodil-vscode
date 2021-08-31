@@ -43,7 +43,7 @@ object Parse {
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger
 
   def apply(
-      schema: URI,
+      schema: file.Path,
       data: InputStream,
       debugger: Debugger
   ): IO[Parse] =
@@ -142,9 +142,6 @@ object Parse {
         stopOnEntry: Boolean,
         infosetOutput: LaunchArgs.InfosetOutput
     ) extends Arguments {
-      def schemaURI: URI =
-        schemaPath.toUri
-
       def data: IO[InputStream] =
         IO.blocking(new FileInputStream(dataPath.toFile).readAllBytes())
           .map(new ByteArrayInputStream(_))
@@ -236,7 +233,7 @@ object Parse {
       events <- Resource.eval(Queue.bounded[IO, Option[Event]](10))
       debugger <- DaffodilDebugger
         .resource(state, events, breakpoints, control, infoset)
-      parse <- Resource.eval(args.data.flatMap(in => Parse(args.schemaURI, in, debugger)))
+      parse <- Resource.eval(args.data.flatMap(in => Parse(args.schemaPath, in, debugger)))
 
       parsing = args.infosetOutput match {
         case Debugee.LaunchArgs.InfosetOutput.None =>
