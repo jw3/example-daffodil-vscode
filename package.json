@@ -1,7 +1,7 @@
 {
   "name": "daffodil-debugger",
   "displayName": "Daffodil Debugger",
-  "version": "0.0.15-pre5",
+  "version": "0.0.15-pre6",
   "publisher": "jw3",
   "description": "Daffodil Schema Debugger: debug DFDL schema files using Apache Daffodil.",
   "license": "Apache-2.0",
