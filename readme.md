@@ -12,6 +12,10 @@ Until the extension is available in the [VS Code Extension Marketplace](https://
   * on the command-line via `code --install-extension <path-to-downloaded-vsix>`.
 
 
+### System Requirements
+
+- Java Runtime 1.8 or greater
+
 ## Usage
 
 Please refer to the Wiki page at https://github.com/jw3/example-daffodil-vscode/wiki
