@@ -5,7 +5,7 @@ lazy val commonSettings = {
     organization := "org.apache.daffodil",
     scalaVersion := "2.12.13",
     scalacOptions ++= Seq("-Ypartial-unification"),
-    javacOptions ++= Seq("-source", "11", "-target", "8"),
+    javacOptions ++= Seq("-source", "8"),
     git.useGitDescribe := true,
     libraryDependencies ++= Seq(
       "org.apache.daffodil" %% "daffodil-sapi" % daffodilVer,

@@ -141,7 +141,7 @@ object Parse {
         infosetOutput: LaunchArgs.InfosetOutput
     ) extends Arguments {
       def data: IO[InputStream] =
-        IO.blocking(new FileInputStream(dataPath.toFile).readAllBytes())
+        IO.blocking(java.nio.file.Files.readAllBytes(dataPath))
           .map(new ByteArrayInputStream(_))
     }
 
@@ -204,8 +204,8 @@ object Parse {
     }
   }
 
-  val infosetSource = DAPodil.Source(Path.of("infoset"), Some(DAPodil.Source.Ref(1)))
-  val dataDumpSource = DAPodil.Source(Path.of("data"), Some(DAPodil.Source.Ref(2)))
+  val infosetSource = DAPodil.Source(Paths.get("infoset"), Some(DAPodil.Source.Ref(1)))
+  val dataDumpSource = DAPodil.Source(Paths.get("data"), Some(DAPodil.Source.Ref(2)))
 
   def debugee(request: Request): EitherNel[String, Resource[IO, DAPodil.Debugee]] =
     Debugee.LaunchArgs.parse(request.arguments).map(debugee)
