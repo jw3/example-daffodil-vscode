@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Setup Java
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 8
+
       - name: Export git tag and package.json version
         run: |
           GIT_TAG=$(echo ${GITHUB_REF#refs/*/} | cut -d 'v' -f 2)
