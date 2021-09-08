@@ -2,20 +2,15 @@ import * as vscode from 'vscode'
 import * as daf from '../daffodil'
 import * as fs from 'fs'
 import * as hexy from 'hexy'
-import XDGAppPaths from 'xdg-app-paths'
 import { ConfigEvent, DaffodilData } from '../daffodil'
-const xdgAppPaths = XDGAppPaths({ name: 'dapodil' })
 
 export class DebuggerHexView {
   context: vscode.ExtensionContext
   dataFile: string = ''
-  hexFile: string = vscode.workspace.workspaceFolders
-    ? `${vscode.workspace.workspaceFolders[0].uri.fsPath}/datafile-hex`
-    : `${xdgAppPaths.data()}/datafile-hex`
   hexString: string = ''
   bytePos1b: number = -1
-  decorator: vscode.TextEditorDecorationType =
-    vscode.window.createTextEditorDecorationType({})
+  panel: vscode.WebviewPanel | undefined = undefined
+  extensionUri: vscode.Uri = vscode.Uri.parse("")
 
   constructor(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -31,65 +26,26 @@ export class DebuggerHexView {
       )
     )
     context.subscriptions.push(
-      vscode.debug.onDidStartDebugSession(this.onDidStartDebugSession, this)
-    )
-    context.subscriptions.push(
       vscode.commands.registerCommand('hexview.display', async () => {
         await this.openHexFile()
       })
     )
     this.context = context
 
-    this.decorator = vscode.window.createTextEditorDecorationType({
-      gutterIconPath: this.context.asAbsolutePath('./images/arrow.svg'),
-      gutterIconSize: 'contain',
-      color: 'black',
-      backgroundColor: 'yellow',
-    })
-  }
-
-  // Method for getting the decorator
-  getDecorator(hexLength, dataPositon) {
-    this.decorator.dispose() // needed to reset decorator
-
-    if (hexLength !== dataPositon) {
-      this.decorator = vscode.window.createTextEditorDecorationType({
-        gutterIconPath: this.context.asAbsolutePath('./images/arrow.svg'),
-        gutterIconSize: 'contain',
-        color: 'black',
-        backgroundColor: 'yellow',
-      })
-    }
-    return this.decorator
-  }
-
-  // Method for deleting files
-  deleteFile(fileName) {
-    if (fs.existsSync(fileName)) {
-      if (fileName === this.hexFile) {
-        this.closeHexFile()
-      }
-
-      fs.unlink(fileName, function (err) {
-        if (err) {
-          vscode.window.showInformationMessage(
-            `error code: ${err.code} - ${err.message}`
-          )
-        }
-      })
+    
+    if (vscode.workspace.workspaceFolders) {
+      this.extensionUri = vscode.workspace.workspaceFolders[0].uri
     }
   }
 
   // Overriden onTerminatedDebugSession method
   onTerminatedDebugSession(session: vscode.DebugSession) {
     if (session.type === 'dfdl') {
-      vscode.window.visibleTextEditors.forEach((editior) => {
-        if (editior.document.fileName === this.hexFile) {
-          editior.hide() // method is deprecated but is only way to close specific editor not just the active one
-        }
-      })
       this.dataFile = ''
       this.bytePos1b = -1
+      if (this.panel) {
+        this.panel.dispose()
+      }
     }
   }
 
@@ -107,99 +63,20 @@ export class DebuggerHexView {
     }
   }
 
-  // Override onDidStartDebugSession method
-  onDidStartDebugSession(session: vscode.DebugSession) {
-    // On debug session make sure hex file is deleted and not opened
-    if (session.type === 'dfdl') {
-      this.closeHexFile()
-      this.deleteFile(this.hexFile)
-      this.decorator.dispose()
-    }
-  }
-
   // Method for extracting the data file used
   setDataFile(cfg: ConfigEvent) {
     this.dataFile = cfg.launchArgs.dataPath
   }
 
-  // Method for getting the selection range
-  getSelectionRange(): [vscode.Range, number] {
-    let lineNum = Math.floor((this.bytePos1b - 1) / 16)
-    let paddingForSpaces =
-      this.bytePos1b - 1 > 0 ? (this.bytePos1b - lineNum * 16 - 1) * 2 : 0
-    let paddingForLine =
-      this.bytePos1b - 16 > 0 ? this.bytePos1b - lineNum * 16 : this.bytePos1b
-    let dataPositon = 9 + paddingForLine + paddingForSpaces
-    let start = new vscode.Position(lineNum, dataPositon)
-    let end = new vscode.Position(lineNum, dataPositon + 2)
-    return [new vscode.Range(start, end), lineNum]
-  }
-
-  // Method for updating the line selected in the hex file using the current data position
-  updateSelectedDataPosition() {
-    let hexEditor = vscode.window.activeTextEditor
-    let [range, lineNum] = this.getSelectionRange()
-    let hexLength = this.hexString.split('\n')[lineNum]
-      ? this.hexString.split('\n')[lineNum].length
-      : this.bytePos1b
-
-    vscode.window.visibleTextEditors.forEach((editior) => {
-      if (editior.document.fileName === this.hexFile) {
-        hexEditor = editior
-        return
-      }
-    })
-
-    if (!hexEditor) {
-      return
-    }
-    hexEditor.selection = new vscode.Selection(range.start, range.end)
-    hexEditor.setDecorations(this.getDecorator(hexLength, this.bytePos1b), [
-      range,
-    ])
-    hexEditor.revealRange(range)
-  }
-
-  // Method to close hexFile if opened in editor
-  closeHexFile() {
-    vscode.window.visibleTextEditors.forEach((editior) => {
-      if (editior.document.fileName === this.hexFile) {
-        editior.hide()
-      }
-    })
-  }
-
-  // Method to open the hex file via text editor, selecting the line at the current data position
+  // Method to open the hex string via web view
   openHexFile() {
-    let [range, _] = this.getSelectionRange()
-    let hexLength = this.hexString.split('\n')[this.bytePos1b - 1]
-      ? this.hexString.split('\n')[this.bytePos1b - 1].length
-      : this.bytePos1b
-    vscode.workspace.openTextDocument(this.hexFile).then((doc) => {
-      vscode.window
-        .showTextDocument(doc, {
-          selection: range,
-          viewColumn: vscode.ViewColumn.Three,
-          preserveFocus: true,
-          preview: false,
-        })
-        .then((editor) => {
-          editor.setDecorations(this.getDecorator(hexLength, this.bytePos1b), [
-            range,
-          ])
-        })
-    })
+    this.initializeWebview()
+    this.updateWebview()
   }
 
   // Method to see hexFile is opened
   checkIfHexFileOpened() {
-    let result = false
-    vscode.window.visibleTextEditors.forEach((editior) => {
-      if (editior.document.fileName === this.hexFile) {
-        result = true
-      }
-    })
-    return result
+    return this.panel ? true : false
   }
 
   // Method to display the hex of the current data position sent from the debugger
@@ -233,27 +110,83 @@ export class DebuggerHexView {
       }
     })
 
-    // Create file that holds path to data file used
-    if (!fs.existsSync(this.hexFile)) {
-      await fs.writeFile(this.hexFile, this.hexString, function (err) {
-        if (err) {
-          vscode.window.showInformationMessage(
-            `error code: ${err.code} - ${err.message}`
-          )
-        }
-      })
-    }
-
-    // Only update position if hex file is opened
+    // Only update position if hex web view is opened
     if (this.checkIfHexFileOpened()) {
-      this.updateSelectedDataPosition()
-    }
-
-    let hexLength = this.hexString.split('\n')[this.bytePos1b - 1]
-      ? this.hexString.split('\n')[this.bytePos1b - 1].length
-      : 0
-    if (hexLength === 0) {
-      this.closeHexFile()
+      this.updateWebview()
     }
   }
+
+  // Method for retrieving the current web view, if one does exist it is created
+  getWebView() {
+    if(!this.panel) {
+      this.panel = vscode.window.createWebviewPanel('hexView', 'Hex View', vscode.ViewColumn.Beside, this.getWebviewOptions(this.extensionUri))
+      this.panel.onDidDispose(() => {
+        this.panel = undefined
+      }, null, this.context.subscriptions)
+    }
+
+    return this.panel
+  }
+
+  // Method for initial setup of webview
+  initializeWebview() {
+    let lineNum = Math.floor((this.bytePos1b - 1) / 16)
+    let dataPositon = this.bytePos1b - 16 > 0 ? this.bytePos1b - lineNum * 16 : this.bytePos1b
+    let panel = this.getWebView()
+    panel.webview.html = this.getWebviewContent(this.hexString, lineNum, dataPositon)
+  }
+
+  // Method for updating the web view, updates the selection
+  updateWebview() {
+    let lineNum = Math.floor((this.bytePos1b - 1) / 16)
+    let dataPositon = this.bytePos1b - 16 > 0 ? this.bytePos1b - lineNum * 16 : this.bytePos1b
+    this.updateSelection(lineNum, dataPositon)
+  }
+
+  // Method for creating web view option that allow our custom script to run
+  getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
+    return {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.parse(this.context.asAbsolutePath("./src/hexview/scripts"))]
+    }
+  }
+  
+  // Method to set html for the hex view
+  getWebviewContent(nonHtmlText, lineNum, dataPositon) {
+    const scriptUri = (
+      vscode.Uri.parse(this.context.asAbsolutePath("./src/hexview/scripts/html.js"))).with({ 'scheme': 'vscode-resource' }
+    );
+		const nonce = this.getNonce();
+
+    return `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content=width=device-width, initial-scale=1.0">
+      <title>Hex View</title>
+    </head>
+    <body>
+      <p id="hexHtml">""</p>
+      <p id="nonHtmlHex" style="display: none;">${nonHtmlText}</p>
+      <script nonce="${nonce}" src="${scriptUri}"></script>
+    </body>
+  </html>`
+  }
+
+  // Method to get nonce, helps with running custom script
+  getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+  }
+
+  // Method send message to custom script to update the selection of the web view
+  updateSelection(lineNum, dataPositon) {
+    let panel = this.getWebView()
+		panel.webview.postMessage({ 'args': { 'lineNum': lineNum, 'dataPosition': dataPositon } });
+	}
 }
