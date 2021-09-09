@@ -172,6 +172,7 @@ export class DebuggerHexView {
     const scriptUri = (
       vscode.Uri.parse(this.context.asAbsolutePath("./src/scripts/hexviewHtml.js"))).with({ 'scheme': 'vscode-resource' }
     );
+    const arrowIconContent = fs.readFileSync(this.context.asAbsolutePath("./images/arrow.svg"))
 		const nonce = this.getNonce();
 
     return `
@@ -185,6 +186,7 @@ export class DebuggerHexView {
     <body>
       <p id="hexHtml">""</p>
       <p id="nonHtmlHex" style="display: none;">${nonHtmlText}</p>
+      <p id="arrowIcon" style="display: none;">${arrowIconContent}</p>
       <script nonce="${nonce}" src="${scriptUri}"></script>
     </body>
   </html>`
