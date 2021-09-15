@@ -2,14 +2,16 @@ lazy val daffodilVer = "3.1.0"
 
 lazy val commonSettings = {
   Seq(
-    organization := "org.apache.daffodil",
-    scalaVersion := "2.12.13",
-    scalacOptions ++= Seq("-Ypartial-unification"),
     git.useGitDescribe := true,
     libraryDependencies ++= Seq(
       "org.apache.daffodil" %% "daffodil-sapi" % daffodilVer,
       "org.apache.daffodil" %% "daffodil-runtime1" % daffodilVer,
-    )
+    ),
+    licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
+    organization := "Adam Rosien, John Wass",
+    scalaVersion := "2.12.13",
+    scalacOptions ++= Seq("-Ypartial-unification"),
+    startYear := Some(2021),
   )
 }
 
