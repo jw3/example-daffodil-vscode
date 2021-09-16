@@ -13,7 +13,7 @@ import {
   ProviderResult,
   CancellationToken,
 } from 'vscode'
-import { DaffodilDebugSession } from '../daffodilDebug'
+import { DaffodilDebugSession } from './daffodilDebug'
 import { getDebugger, getDataFileFromFolder } from '../daffodilDebugger'
 import { FileAccessor } from './daffodilRuntime'
 import * as fs from 'fs'
