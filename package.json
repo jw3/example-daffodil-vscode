@@ -136,6 +136,7 @@
         "command": "hexview.display",
         "title": "Display the hex view",
         "category": "Daffodil Debug",
+        "enablement": "inDebugMode"
       },
       {
         "command": "infoset.display",
