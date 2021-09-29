@@ -84,6 +84,18 @@
       }
     ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "hexview.display",
+          "when": "resourceLangId == xml",
+          "group": "navigation"
+        },
+        {
+          "command": "infoset.display",
+          "when": "resourceLangId == xml",
+          "group": "navigation"
+        }
+      ],
       "editor/title/run": [
         {
           "command": "extension.dfdl-debug.runEditorContents",
@@ -101,6 +113,14 @@
         },
         {
           "command": "extension.dfdl-debug.runEditorContents",
+          "when": "resourceLangId == xml"
+        },
+        {
+          "command": "hexview.display",
+          "when": "resourceLangId == xml"
+        },
+        {
+          "command": "infoset.display",
           "when": "resourceLangId == xml"
         }
       ],
@@ -136,13 +156,15 @@
         "command": "hexview.display",
         "title": "Display the hex view",
         "category": "Daffodil Debug",
-        "enablement": "inDebugMode"
+        "enablement": "inDebugMode",
+        "icon": "$(file-binary)"
       },
       {
         "command": "infoset.display",
         "title": "Display the infoset view",
         "category": "Daffodil Debug",
-        "enablement": "inDebugMode"
+        "enablement": "inDebugMode",
+        "icon": "$(file-code)"
       },
       {
         "command": "infoset.save",
