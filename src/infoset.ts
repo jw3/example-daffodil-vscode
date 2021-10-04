@@ -20,6 +20,7 @@ import * as daf from './daffodil'
 import * as fs from 'fs'
 import { InfosetEvent } from './daffodil'
 import { Uri } from 'vscode'
+import { onDebugStartDisplay } from './utils'
 
 export async function activate(ctx: vscode.ExtensionContext) {
   let sid: string | undefined
@@ -28,6 +29,7 @@ export async function activate(ctx: vscode.ExtensionContext) {
   ctx.subscriptions.push(
     vscode.debug.onDidStartDebugSession((s) => {
       sid = s.id
+      onDebugStartDisplay(['infoset-view', 'infoset-diff-view'])
     })
   )
   ctx.subscriptions.push(
@@ -53,7 +55,7 @@ export async function activate(ctx: vscode.ExtensionContext) {
         await vscode.window.showTextDocument(doc, {
           viewColumn: vscode.ViewColumn.Beside,
           preserveFocus: true,
-          preview: true,
+          preview: false,
         })
       }
     })
@@ -79,6 +81,7 @@ export async function activate(ctx: vscode.ExtensionContext) {
                 case 'View':
                   let xml = await vscode.workspace.openTextDocument(uri)
                   await vscode.window.showTextDocument(xml, {
+                    preview: false,
                     viewColumn: vscode.ViewColumn.Beside,
                   })
                   break
@@ -102,7 +105,8 @@ export async function activate(ctx: vscode.ExtensionContext) {
           'vscode.diff',
           Uri.parse(prev),
           Uri.parse(path),
-          'Previous ↔ Current'
+          'Previous ↔ Current',
+          { preview: false, viewColumn: vscode.ViewColumn.Beside }
         )
       }
     })
