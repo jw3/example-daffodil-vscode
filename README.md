@@ -17,6 +17,9 @@
   limitations under the License.
 -->
 
+Archived: This project has moved to https://github.com/apache/daffodil-vscode
+---
+
 ![Daffodil Debug](images/daffodil.jpg)
 
 # VS Code Daffodil Debug
